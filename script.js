@@ -251,6 +251,8 @@ function next_button_click() {
         new_user_action(data);
     } else if (data.phase.point == "user_assumption") {
         assumption_calc(data);
+    } else if (data.phase.point == "bot_action") {
+        new_bot_action();
     } else {
         console.log('not a new action');
     }
@@ -406,20 +408,6 @@ function new_user_action(data) {
     modal_right_controls.append(assumption_button);
 
     layer.append(modal);
-}
-
-function new_bot_action() {
-    check_time();
-    let data = get_data();
-    console.log('bot_action');
-
-    let player = data.phase.active_player;
-    let position = data.phase.position;
-
-
-
-
-
 }
 
 function player_selector_change() {
@@ -727,6 +715,256 @@ function get_corr_factor(history, active_player, selected) {
     return { "corr_factor": corr_factor, "factor_group": factor_group };
 }
 
+function new_bot_action() {
+    check_time();
+    let data = get_data();
+
+    let player = data.phase.active_player;
+    let position = data.phase.position;
+    let calc_list = data.players_data[player].calc_list;
+    let cards_info = get_cards_info(data.user_name);
+    console.log('bot_action ' + player);
+
+    //подготовка к проверкам - распределение по группам
+    let true_cards = 0;
+    let cards_player = { 'total': [], 'false': [], 'unknown': [] };
+    let cards_weapon = { 'total': [], 'false': [], 'unknown': [] };
+    let cards_location = { 'total': [], 'false': [], 'unknown': [] };
+    for (card in calc_list) {
+        if (cards_info[card]["type"] == "player") {
+            cards_player['total'].push(card);
+            if (calc_list[card]["rate"] > 5000) {
+                cards_player['true'] = card;
+                true_cards++;
+            } else if (calc_list[card]["rate"] < -5000) {
+                cards_player['false'].push(card);
+            } else {
+                cards_player['unknown'].push(card);
+            }
+        } else if (cards_info[card]["type"] == "weapon") {
+            cards_weapon['total'].push(card);
+            if (calc_list[card]["rate"] > 5000) {
+                cards_weapon['true'] = card;
+                true_cards++;
+            } else if (calc_list[card]["rate"] < -5000) {
+                cards_weapon['false'].push(card);
+            } else {
+                cards_weapon['unknown'].push(card);
+            }
+        } else if (cards_info[card]["type"] == "location") {
+            cards_location['total'].push(card);
+            if (calc_list[card]["rate"] > 5000) {
+                cards_location['true'] = card;
+                true_cards++;
+            } else if (calc_list[card]["rate"] < -5000) {
+                cards_location['false'].push(card);
+            } else {
+                cards_location['unknown'].push(card);
+            }
+        }
+    }
+
+    console.log(calc_list);
+    //console.log({ "cards_player": cards_player, "cards_weapon": cards_weapon, "cards_location": cards_location });
+
+    //определение стратегии
+    let player_pick = null;
+    let weapon_pick = null;
+    let location_pick = null;
+    let false_check = [];
+    let target_regime = false;
+    //предпроверка большого отклонения - срабатывает в 50 проц. случаев
+    let random_value0 = Math.floor(Math.random() * 100);
+    if (random_value0 < 50) {
+        if (!cards_location['true'] && cards_location['unknown']) {
+            let target_card_location = neutral_distribution_target_check(cards_location['unknown'], calc_list);
+            if (target_card_location) {
+                location_pick = target_card_location;
+                target_regime = true;
+                false_check = ["player", "weapon"];
+            }
+        }
+        if (!cards_weapon['true'] && cards_weapon['unknown'] && !target_regime) {
+            let target_card_weapon = neutral_distribution_target_check(cards_weapon['unknown'], calc_list);
+            if (target_card_weapon) {
+                weapon_pick = target_card_weapon;
+                target_regime = true;
+                false_check = ["player", "location"];
+            }
+        }
+        if (!cards_player['true'] && cards_player['unknown'] && !target_regime) {
+            let target_card_player = neutral_distribution_target_check(cards_player['unknown'], calc_list);
+            if (target_card_player) {
+                player_pick = target_card_player;
+                target_regime = true;
+                false_check = ["weapon", "location"];
+            }
+        }
+        //console.log('target_regime ' + target_regime);
+    }
+    //основная логика расчета
+    if (true_cards == 0 && !target_regime) { //неизвестны три
+        //75 процентов на выбор 3 неизвестных; 20 процетнов на выбор 2 неизвестных; 5 процетнов на выбор 1 неизвестной
+        let random_value = Math.floor(Math.random() * 100);
+        if (random_value < 5) { //в двух из групп - "ложный выбор"
+            let packs = ["player", "weapon", "location"];
+            let first_check = arrayRandElement(packs);
+            false_check.push(first_check);
+            packs = packs.filter(val => val !== first_check);
+            false_check.push(arrayRandElement(packs));
+            //console.log('2 false ' + false_check);
+        } else if (random_value < 25) { //в одной из групп - "ложный выбор"
+            let packs = ["player", "weapon", "location"];
+            false_check.push(arrayRandElement(packs));
+            //console.log('1 false ' + false_check);
+        }
+    } else if (true_cards == 1 && !target_regime) { //неизвестны две
+        //80 процентов на выбор 2 неизвестных; 20 процетнов на выбор 1 неизвестной, а 1 заведомо неверной
+        let random_value = Math.floor(Math.random() * 100);
+        if (random_value < 20) { //в одной из групп - "ложный выбор"
+            let packs = [];
+            if (cards_player['true']) {
+                packs = ["weapon", "location"];
+            } else if (cards_weapon['true']) {
+                packs = ["player", "location"];
+            } else if (cards_location['true']) {
+                packs = ["player", "weapon"];
+            }
+            false_check.push(arrayRandElement(packs));
+        }
+    }
+    //из групп, где есть ответы (или если попали в процент ложного выбора) - берем заведомо неверную
+    if (cards_player['true'] || in_array("player", false_check)) {
+        if (cards_player['false'].length != 0) {
+            player_pick = array_false_change(cards_player['false'], data.players_data[player].cards);
+        } else {
+            player_pick = arrayRandElement(cards_player['unknown']);
+        }
+    }
+    if (cards_weapon['true'] || in_array("weapon", false_check)) {
+        if (cards_weapon['false'].length != 0) {
+            weapon_pick = array_false_change(cards_weapon['false'], data.players_data[player].cards);
+        } else {
+            weapon_pick = arrayRandElement(cards_weapon['unknown']);
+        }
+    }
+    if (cards_location['true'] || in_array("location", false_check)) {
+        if (cards_location['false'].length != 0) {
+            location_pick = array_false_change(cards_location['false'], data.players_data[player].cards);
+        } else {
+            location_pick = arrayRandElement(cards_location['unknown']);
+        }
+    }
+    //из прочих групп берем из нейтрального распределения
+    if (!player_pick) { //неизвестен игрок
+        let unknown_array = cards_player['unknown'];
+        if (unknown_array.length == 0) {
+            unknown_array = cards_player['false'];
+        }
+        player_pick = neutral_distribution_select(unknown_array, calc_list);
+    }
+    if (!weapon_pick) { //неизвестно оружие
+        let unknown_array = cards_weapon['unknown'];
+        if (unknown_array.length == 0) {
+            unknown_array = cards_weapon['false'];
+        }
+        weapon_pick = neutral_distribution_select(unknown_array, calc_list);
+    }
+    if (!location_pick) { //неизвестно место
+        let unknown_array = cards_location['unknown'];
+        if (unknown_array.length == 0) {
+            unknown_array = cards_location['false'];
+        }
+        location_pick = neutral_distribution_select(unknown_array, calc_list);
+    }
+    let bot_assumption = [player_pick, weapon_pick, location_pick];
+    console.log('assumption ' + bot_assumption);
+    console.log(data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[player_pick]["name"] + ", орудие - " + cards_info[weapon_pick]["name"] + ", место - " + cards_info[location_pick]["name"]);
+
+
+
+
+
+}
+
+//выбор точно отрицательной карты для "ложной" части запроса
+function array_false_change(false_array, player_cards) {
+    let player_false_cards = false_array.filter(x => player_cards.includes(x));
+    let random_value = Math.floor(Math.random() * 100);
+    if (random_value < 80 && player_false_cards) { //80 процентов взять из своих карт, если такие есть под запрос
+        return arrayRandElement(player_false_cards);
+    }
+    return arrayRandElement(false_array); //иначе - из всех, подходящих под запрос
+}
+
+//выбор карты из нейтрального распределения
+function neutral_distribution_select(array, calc_list) {
+    if (array.length == 0) {
+        return false;
+    }
+    let total_rate = 0
+    for (card_info of array) {
+        total_rate = total_rate + calc_list[card]["rate"];
+    }
+    let average_rate = total_rate / array.length;
+    let base_chance = 100;
+    let selection = {};
+    let selection_point = 0;
+    for (card of array) {
+        let chance = 0;
+        let rate = calc_list[card]["rate"];
+        let actions = calc_list[card]["actions"];
+        //чем выше карта в распределении - тем больше шанс ее выбора
+        let deviation = rate - average_rate;
+        if (deviation >= 1) {
+            chance = Math.round(base_chance * Math.sqrt(deviation));
+        } else if (deviation <= -1) {
+            chance = Math.round(base_chance / Math.sqrt(-deviation));
+        } else {
+            chance = base_chance;
+        }
+        //чем чаще спрашивали карту, тем меньше шанс ее выбора
+        chance = Math.round(chance / Math.sqrt(actions + 1));
+        //распределяем карты с шансами по отрезку
+        selection[card] = { "min": selection_point };
+        selection_point = selection_point + chance;
+        selection[card]["max"] = selection_point;
+    }
+    //console.log(selection);
+    //случайный выбор
+    let random_value = Math.floor(Math.random() * selection_point);
+    for (card in selection) {
+        if (random_value >= selection[card]["min"] && random_value < selection[card]["max"]) {
+            return card;
+        }
+    }
+    return false;
+}
+
+//проверка сверхбольшого отклонения из распределения + по карте уже спрашивали
+function neutral_distribution_target_check(array, calc_list) {
+    let deviation_target_level = 30;
+    if (array.length == 0) {
+        return false;
+    }
+    let total_rate = 0
+    for (card of array) {
+        total_rate = total_rate + calc_list[card]["rate"];
+    }
+    let average_rate = total_rate / array.length;
+    for (card of array) {
+        let rate = calc_list[card]["rate"];
+        let actions = calc_list[card]["actions"];
+        let deviation = rate - average_rate;
+        if (deviation >= deviation_target_level && actions >= 1) {
+            return card;
+        }
+    }
+    return false;
+}
+
+
+
 
 
 function answer_button_click() {
@@ -847,7 +1085,11 @@ function set_data(players_amount, user_name) {
     }
     //списки для расчета вероятностей
     for (line_key in cards_base_info) {
-        cards_base_info[line_key] = { 'rate': 0, "actions": 0 };
+        if (!in_array(line_key, cards_list)) {
+            delete cards_base_info[line_key];
+        } else {
+            cards_base_info[line_key] = { 'rate': 0, "actions": 0 };
+        }
     }
     for (let i = 0; i < bots_amount; i++) {
         let cards_base_info_dump = clone(cards_base_info);
@@ -974,6 +1216,11 @@ function shuffle(array) {
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function arrayRandElement(arr) {
+    let rand = Math.floor(Math.random() * arr.length);
+    return arr[rand];
 }
 
 function in_array(needle, haystack, strict) {
