@@ -154,7 +154,7 @@ function workarea_render() {
             pos_player.className = player.side + "-player " + player.pos + "-player";
 
             let player_info_cont = document.createElement('div');
-            player_info_cont.className = "player-info-container-" + player.subside + " " + player.subpos + "-info";
+            player_info_cont.className = "player-info-container player-info-container-" + player.subside + " " + player.subpos + "-info";
             pos_player.append(player_info_cont);
 
             let player_info = document.createElement('div');
@@ -227,9 +227,12 @@ function workarea_render() {
 function forced_render(storage_data) {
     storage_data = JSON.parse(storage_data);
     if (storage_data.phase.point == "user_assumption") {
-        assumption_button_click(true);
+        assumption_reaction(true, false);
     } else if (storage_data.phase.point == "bot_action") {
-        new_bot_action();
+        show_bot_selected();
+    } else if (storage_data.phase.point == "bot_assumption") {
+        show_bot_selected();
+        assumption_reaction(true, true);
     }
 
 }
@@ -252,7 +255,9 @@ function next_button_click() {
     } else if (data.phase.point == "user_assumption") {
         assumption_calc(data);
     } else if (data.phase.point == "bot_action") {
-        new_bot_action();
+        assumption_reaction(false, true);
+    } else if (data.phase.point == "bot_assumption") {
+        assumption_calc(data);
     } else {
         console.log('not a new action');
     }
@@ -404,7 +409,7 @@ function new_user_action(data) {
     assumption_button.id = "assumption-button";
     assumption_button.className = "modal-button";
     assumption_button.textContent = "Догадка";
-    assumption_button.onclick = assumption_button_click;
+    assumption_button.onclick = assumption_reaction;
     modal_right_controls.append(assumption_button);
 
     layer.append(modal);
@@ -417,11 +422,11 @@ function player_selector_change() {
     selector.className = value + "-selector";
 }
 
-function assumption_button_click(forced_render = false) {
+function assumption_reaction(forced_render = false, bot_action = false) {
     let data = get_data();
     let selected = [];
 
-    if (forced_render === true) {
+    if (forced_render === true || bot_action === true) {
         selected = data.phase.assumption;
     } else {
         let player_selector = document.querySelector('#person-selector');
@@ -446,9 +451,13 @@ function assumption_button_click(forced_render = false) {
         data.phase.assumption = selected;
         update_data(data);
     }
+    if (bot_action === true && forced_render !== true) {
+        data.phase.point = "bot_assumption";
+        update_data(data);
+    }
 
     let order = clone(data.order);
-    order = order.splice(order.indexOf("bottom")).concat(order);
+    order = order.splice(order.indexOf(data.phase.position)).concat(order);
     let reaction = [];
 
     setTimeout(() => {
@@ -479,12 +488,14 @@ function action_react(data, order_now, selected, reaction) {
         }
     }
 
+    let text = '';
     if (have_card) {
         reaction.push(player_id);
-        console.log(player.name + ' : у меня есть!');
+        text = player.name + ' : у меня есть!';
     } else {
-        console.log(player.name + ' : у меня нету');
+        text = player.name + ' : у меня нету';
     }
+    player_speach(order_now, text);
     return reaction;
 }
 
@@ -493,36 +504,57 @@ function assumption_calc(data) {
     let position = data.phase.position;
     let active_player = data.phase.active_player;
     let corr_factor = get_corr_factor(data.history, active_player, selected);
-    //console.log(selected);
-    //console.log(data.phase.reaction);
-    //console.log(position);
-    //console.log(active_player);
     console.log(data);
 
     let reaction_amount = data.phase.reaction.length;
     for (let player_id in data.players_data) {
         let player_data = data.players_data[player_id];
         if (player_data.type == 'user') { continue; }
+        let self_calc = false;
+        let self_unknown = 3;
+        let self_unknown_cards = [];
+        if (player_data.pos == position) {
+            self_calc = true;
+            for (card of data.phase.assumption) {
+                if (in_array(card, player_data.cards)) {
+                    self_unknown--;
+                } else {
+                    self_unknown_cards.push(card);
+                }
+            }
+        }
         let player_reaction = false;
         if (in_array(player_id, data.phase.reaction, false)) {
             player_reaction = true; //один из ответивших
         }
+        //спрашивал сам, никто не ответил
+        if (self_calc && reaction_amount == 0) {
+            for (let selected_card of self_unknown_cards) {
+                player_data['calc_list'][selected_card]['rate'] = 10000; //все неизвестные - точно верные
+            }
+        }
+        //спрашивал сам, ответило по количеству неизвестных
+        else if (self_calc && reaction_amount == self_unknown) {
+            for (let selected_card of self_unknown_cards) {
+                player_data['calc_list'][selected_card]['rate'] = -10000; //все неизвестные - точно неверные
+            }
+        }
         //ответили трое
-        if (reaction_amount == 3) {
+        else if (reaction_amount == 3) {
             for (let selected_card of selected) {
                 if (!in_array(selected_card, player_data.cards)) {
                     player_data['calc_list'][selected_card]['rate'] = -10000; //исключаем все из запроса
                 }
             }
         }
-        //ответили двое, он среди них
-        else if (reaction_amount == 2 && player_reaction) {
+        //ответили двое, он среди них; либо спрашивал сам, неизвестных 2, ответил 1
+        else if ((reaction_amount == 2 && player_reaction) || (self_calc && reaction_amount == 1 && self_unknown == 2)) {
             if (selected.filter(x => player_data.cards.includes(x)).length == 2) { //у него 2 карты из запроса
                 for (let selected_card of selected.filter(x => !player_data.cards.includes(x))) {
                     player_data['calc_list'][selected_card]['rate'] = -10000; //исключаем третью
                 }
             } else {
-                let change_ratio = calc_ratio_2in(data);
+                let change_ratio = calc_ratio_2in(data, self_calc);
                 for (let selected_card of selected) {
                     if (!in_array(selected_card, player_data.cards)) {
                         let rate = player_data['calc_list'][selected_card]['rate'];
@@ -535,9 +567,9 @@ function assumption_calc(data) {
                 }
             }
         }
-        //ответили двое, тебя среди них нет
+        //ответили двое, тебя среди них нет; либо спрашивал сам, неизвестных 3, ответили 2
         else if (reaction_amount == 2) {
-            let change_ratio = calc_ratio_2(data);
+            let change_ratio = calc_ratio_2(data, self_calc);
             for (let selected_card of selected) {
                 if (!in_array(selected_card, player_data.cards)) {
                     let rate = player_data['calc_list'][selected_card]['rate'];
@@ -563,9 +595,9 @@ function assumption_calc(data) {
                 }
             }
         }
-        //ответил один, и не он
+        //ответил один, и не он; либо спрашивал сам, неизвестных 3, ответил 1
         else if (reaction_amount == 1) {
-            let change_ratio = calc_ratio_1(data);
+            let change_ratio = calc_ratio_1(data, self_calc);
             for (let selected_card of selected) {
                 if (!in_array(selected_card, player_data.cards)) {
                     let rate = player_data['calc_list'][selected_card]['rate'];
@@ -598,21 +630,29 @@ function assumption_calc(data) {
     let order = clone(data.order);
     order = order.splice(order.indexOf(position)).concat(order);
     data.phase.position = order[1];
+    let next_player_type = null;
     for (player_id in data.players_data) {
         let player = data.players_data[player_id];
         if (player.pos == order[1]) {
             data.phase.active_player = player.id;
+            next_player_type = player.type;
         }
     }
     data.phase.reaction = [];
     data.phase.assumption = [];
-    data.phase.point = "bot_action";
-    update_data(data);
-    new_bot_action(data);
+    if (next_player_type == 'bot') {
+        data.phase.point = "bot_action";
+        update_data(data);
+        new_bot_action(data);
+    } else if (next_player_type == 'user') {
+        data.phase.point = "user_action";
+        update_data(data);
+        new_user_action(data);
+    }
 }
 
 //ну я типа пытался рассчитать эти вероятности, лол, но я не статистик. Надеюсь, они будут не слишком тупить
-function calc_ratio_2(data) {
+function calc_ratio_2(data, self_calc) {
     let players = data.players_amount;
     let cards = data.cards_info.total;
     let cards_each = data.cards_info.each_player;
@@ -625,13 +665,15 @@ function calc_ratio_2(data) {
     let chanse_2_3 = chanse_1_3 * chanse2_1_2; //шанс, что есть 2 карты одновременно
     let cut_1st = chanse_2_3 * 2; //поскольку может быть как у первого ответившего, так и у второго
     right = right * (1 - cut_1st); //срезаем правильность первой группой условий
-    //срез на то, что карта может быть у спрашивающего и он падлит / точечно проверяет
-    right = right * (1 - chance_1_1); //срезаем правильность второй группой условий
+    if (!self_calc) {
+        //срез на то, что карта может быть у спрашивающего и он падлит / точечно проверяет (если не расчет для спрашивающего)
+        right = right * (1 - chance_1_1); //срезаем правильность второй группой условий
+    }
     let ratio = right - 50; //отклонение от середины в 50 процентов (тут будет отрицательное)
     return Math.round(ratio);
 }
 
-function calc_ratio_1(data) {
+function calc_ratio_1(data, self_calc) {
     let players = data.players_amount;
     let cards = data.cards_info.total;
     let cards_each = data.cards_info.each_player;
@@ -645,13 +687,15 @@ function calc_ratio_1(data) {
     let chanse3_1_1 = (cards_each - 2) / (cards - cards_each - 2); //шанс, что когда совпала 1 и 2, совпала 3
     let chanse_3_3 = chanse_2_3 * chanse3_1_1; //шанс, что есть 3 карты одновременно
     right = right * (1 - chanse_3_3); //срезаем правильность первой группой условий
-    //срез на то, что карта может быть у спрашивающего и он падлит / точечно проверяет
-    right = right * (1 - chance_1_1); //срезаем правильность второй группой условий
+    if (!self_calc) {
+        //срез на то, что карта может быть у спрашивающего и он падлит / точечно проверяет (если не расчет для спрашивающего)
+        right = right * (1 - chance_1_1); //срезаем правильность второй группой условий
+    }
     let ratio = right - 50; //отклонение от середины в 50 процентов (будет в районе 0, не в +, но не улетит вниз от проверки)
     return Math.round(ratio);
 }
 
-function calc_ratio_2in(data) {
+function calc_ratio_2in(data, self_calc) {
     let players = data.players_amount;
     let cards = data.cards_info.total;
     let cards_each = data.cards_info.each_player;
@@ -662,8 +706,10 @@ function calc_ratio_2in(data) {
     let chanse2_1_1 = (cards_each - 1) / (cards - cards_each - 1); //шанс, что, когда первая совпала, у него есть вторая
     let chanse_2_2 = chanse_1_2 * chanse2_1_1; //шанс, что есть 2 карты одновременно
     right = right * (1 - chanse_2_2); //срезаем правильность первой группой условий
-    //срез на то, что карта может быть у спрашивающего и он падлит / точечно проверяет
-    right = right * (1 - chance_1_1); //срезаем правильность второй группой условий
+    if (!self_calc) {
+        //срез на то, что карта может быть у спрашивающего и он падлит / точечно проверяет (если не расчет для спрашивающего)
+        right = right * (1 - chance_1_1); //срезаем правильность второй группой условий
+    }
     let ratio = right - 50; //отклонение от середины в 50 процентов (тут будет отрицательное)
     return Math.round(ratio);
 }
@@ -723,7 +769,6 @@ function new_bot_action() {
     let position = data.phase.position;
     let calc_list = data.players_data[player].calc_list;
     let cards_info = get_cards_info(data.user_name);
-    console.log('bot_action ' + player);
 
     //подготовка к проверкам - распределение по группам
     let true_cards = 0;
@@ -764,9 +809,6 @@ function new_bot_action() {
         }
     }
 
-    console.log(calc_list);
-    //console.log({ "cards_player": cards_player, "cards_weapon": cards_weapon, "cards_location": cards_location });
-
     //определение стратегии
     let player_pick = null;
     let weapon_pick = null;
@@ -800,7 +842,6 @@ function new_bot_action() {
                 false_check = ["weapon", "location"];
             }
         }
-        //console.log('target_regime ' + target_regime);
     }
     //основная логика расчета
     if (true_cards == 0 && !target_regime) { //неизвестны три
@@ -812,11 +853,9 @@ function new_bot_action() {
             false_check.push(first_check);
             packs = packs.filter(val => val !== first_check);
             false_check.push(arrayRandElement(packs));
-            //console.log('2 false ' + false_check);
         } else if (random_value < 25) { //в одной из групп - "ложный выбор"
             let packs = ["player", "weapon", "location"];
             false_check.push(arrayRandElement(packs));
-            //console.log('1 false ' + false_check);
         }
     } else if (true_cards == 1 && !target_regime) { //неизвестны две
         //80 процентов на выбор 2 неизвестных; 20 процетнов на выбор 1 неизвестной, а 1 заведомо неверной
@@ -877,14 +916,21 @@ function new_bot_action() {
         }
         location_pick = neutral_distribution_select(unknown_array, calc_list);
     }
-    let bot_assumption = [player_pick, weapon_pick, location_pick];
-    console.log('assumption ' + bot_assumption);
-    console.log(data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[player_pick]["name"] + ", орудие - " + cards_info[weapon_pick]["name"] + ", место - " + cards_info[location_pick]["name"]);
+    let bot_selected = [player_pick, weapon_pick, location_pick];
+    console.log('selected ' + bot_selected);
+    data.phase.point = "bot_action";
+    data.phase.assumption = bot_selected;
+    update_data(data);
+    show_bot_selected();
+}
 
-
-
-
-
+function show_bot_selected() {
+    let data = get_data();
+    sleep(700);
+    let player = data.phase.active_player;
+    let cards_info = get_cards_info(data.user_name);
+    let selected = data.phase.assumption;
+    console.log(data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"]);
 }
 
 //выбор точно отрицательной карты для "ложной" части запроса
@@ -930,7 +976,6 @@ function neutral_distribution_select(array, calc_list) {
         selection_point = selection_point + chance;
         selection[card]["max"] = selection_point;
     }
-    //console.log(selection);
     //случайный выбор
     let random_value = Math.floor(Math.random() * selection_point);
     for (card in selection) {
@@ -963,7 +1008,18 @@ function neutral_distribution_target_check(array, calc_list) {
     return false;
 }
 
+function player_speach(position, text) {
+    let pos_container = document.querySelector('div.' + position + '-player');
+    let pos_player = pos_container.querySelector('div.player-info-container');
 
+    let player_speach = document.createElement('div');
+    player_speach.textContent = text;
+    player_speach.className = "player-speach";
+    //pos_player.append(player_speach);
+
+    console.log(position + ' - ' + text);
+    //console.log(pos_player);
+}
 
 
 
