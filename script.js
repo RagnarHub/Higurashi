@@ -86,6 +86,7 @@ function workarea_render() {
             let stats_own = document.createElement('div');
             stats_own.className = "stats-own";
             stats_own.innerHTML = player.name + "<br>Счет: " + player.score;
+            stats_own.style['z-index'] = 20;
             stats_own_cont.append(stats_own);
 
             let right_controls = document.createElement('div');
@@ -95,9 +96,14 @@ function workarea_render() {
             let next_button = document.createElement('button');
             next_button.id = "next-button";
             next_button.className = "bottom-button";
-            next_button.textContent = "Продолжить";
+            if (data.phase.point == "user_action") {
+                next_button.textContent = "Догадка";
+            } else {
+                next_button.textContent = "Продолжить";
+            }
             next_button.onclick = next_button_click;
             right_controls.append(next_button);
+            localStorage.setItem('button_block', JSON.stringify(false));
 
             bottom_container.append(controls);
         }
@@ -162,7 +168,7 @@ function workarea_render() {
             player_info_cont.append(player_info);
 
             let container_img = document.createElement('div');
-            container_img.className = "player-info-container-" + player.subside + "-img img-" + player.subpos;
+            container_img.className = "player-img player-info-container-" + player.subside + "-img img-" + player.subpos;
 
             let portrait = document.createElement('img');
             portrait.className = player.border;
@@ -248,20 +254,38 @@ function restart_button_click() {
 }
 
 function next_button_click() {
+    let block = JSON.parse(localStorage.getItem('button_block'));
+    if (block == true) {
+        console.log('return');
+        return false;
+    }
     check_time();
     let data = get_data();
     if (data.phase.point == "user_action") {
+        speach_clear();
         new_user_action(data);
     } else if (data.phase.point == "user_assumption") {
+        speach_clear();
         assumption_calc(data);
     } else if (data.phase.point == "bot_action") {
         assumption_reaction(false, true);
     } else if (data.phase.point == "bot_assumption") {
+        speach_clear();
         assumption_calc(data);
     } else {
+        speach_clear();
         console.log('not a new action');
     }
 
+}
+
+function speach_clear() {
+    for (player_speach of document.querySelectorAll('div.player-speach')) {
+        player_speach.remove();
+    }
+    for (speach_anchor of document.querySelectorAll('div.speach-anchor')) {
+        speach_anchor.remove();
+    }
 }
 
 function new_user_action(data) {
@@ -447,6 +471,8 @@ function assumption_reaction(forced_render = false, bot_action = false) {
             layer.removeChild(layer.firstChild);
         }
 
+        let next_button = document.querySelector('#next-button');
+        next_button.textContent = "Продолжить";
         data.phase.point = "user_assumption";
         data.phase.assumption = selected;
         update_data(data);
@@ -456,22 +482,41 @@ function assumption_reaction(forced_render = false, bot_action = false) {
         update_data(data);
     }
 
+    let first_delay = 100;
+    if (bot_action !== true) {
+        let player = data.phase.active_player;
+        let cards_info = get_cards_info(null);
+        let text = data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+        first_delay = first_delay + 300;
+    }
+
     let order = clone(data.order);
     order = order.splice(order.indexOf(data.phase.position)).concat(order);
     let reaction = [];
 
+    localStorage.setItem('button_block', JSON.stringify(true));
     setTimeout(() => {
         for (let i = 1; i < data.players_amount; i++) {
             let order_now = order[i];
-            sleep(500);
-            reaction = action_react(data, order_now, selected, reaction);
+            //sleep(500);
+            let delay = 300 * i;
+            let unblock = false;
+            if (i == data.players_amount - 1) {
+                unblock = true;
+            }
+            reaction = action_react(data, order_now, selected, reaction, delay, unblock);
         }
         data.phase.reaction = reaction;
         update_data(data);
-    }, 100);
+        if (is_player_next(data, order[1]) == true) {
+            let next_button = document.querySelector('#next-button');
+            next_button.textContent = "Догадка";
+        }
+    }, first_delay);
 }
 
-function action_react(data, order_now, selected, reaction) {
+function action_react(data, order_now, selected, reaction, delay, unblock) {
     let player_id = null;
     let player = null;
     let have_card = false;
@@ -491,11 +536,16 @@ function action_react(data, order_now, selected, reaction) {
     let text = '';
     if (have_card) {
         reaction.push(player_id);
-        text = player.name + ' : у меня есть!';
+        text = 'У меня есть!';
     } else {
-        text = player.name + ' : у меня нету';
+        text = 'У меня нету';
     }
-    player_speach(order_now, text);
+    setTimeout(() => {
+        player_speach_show(order_now, player.side, text);
+        if (unblock == true) {
+            localStorage.setItem('button_block', JSON.stringify(false));
+        }
+    }, delay);
     return reaction;
 }
 
@@ -645,6 +695,8 @@ function assumption_calc(data) {
         update_data(data);
         new_bot_action(data);
     } else if (next_player_type == 'user') {
+        let next_button = document.querySelector('#next-button');
+        next_button.textContent = "Догадка";
         data.phase.point = "user_action";
         update_data(data);
         new_user_action(data);
@@ -926,11 +978,14 @@ function new_bot_action() {
 
 function show_bot_selected() {
     let data = get_data();
-    sleep(700);
+    //sleep(700);
     let player = data.phase.active_player;
     let cards_info = get_cards_info(data.user_name);
     let selected = data.phase.assumption;
-    console.log(data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"]);
+    let text = data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
+    setTimeout(() => {
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+    }, 300);
 }
 
 //выбор точно отрицательной карты для "ложной" части запроса
@@ -1008,17 +1063,43 @@ function neutral_distribution_target_check(array, calc_list) {
     return false;
 }
 
-function player_speach(position, text) {
-    let pos_container = document.querySelector('div.' + position + '-player');
-    let pos_player = pos_container.querySelector('div.player-info-container');
+function player_speach_show(position, side, text) {
+    //text = "Я думаю, что преступник - ты, орудие - твои руки, место - где-то"
+    let pos_player = null;
+    if (position == "bottom") {
+        pos_player = document.querySelector('div.stats-own-container');
+    } else {
+        let pos_container = document.querySelector('div.' + position + '-player');
+        pos_player = pos_container.querySelector('div.player-img');
+    }
 
     let player_speach = document.createElement('div');
     player_speach.textContent = text;
-    player_speach.className = "player-speach";
-    //pos_player.append(player_speach);
+    player_speach.className = "player-speach player-speach-" + side;
+    if (text.length <= 20) {
+        player_speach.classList.add("text-nowrap");
+    } else {
+        player_speach.classList.add("text-200per");
+    }
+    pos_player.append(player_speach);
 
-    console.log(position + ' - ' + text);
+    let speach_anchor = document.createElement('div');
+    speach_anchor.className = "speach-anchor speach-anchor-" + side;
+    pos_player.append(speach_anchor);
+
+    //console.log(position + ' - ' + text);
     //console.log(pos_player);
+}
+
+function is_player_next(data, next_pos) {
+    let players_data = data['players_data'];
+    for (player_key in players_data) {
+        player = players_data[player_key];
+        if (player['pos'] == next_pos && player['type'] == 'user') {
+            return true;
+        }
+    }
+    return false;
 }
 
 

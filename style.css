@@ -423,6 +423,100 @@ img {
     color: red;
 }
 
+.player-speach {
+    position: absolute;
+    background-color:blanchedalmond;
+    border: 2px solid rgb(73, 63, 47);
+    border-radius: 10px;
+    text-align: center;
+    padding: 3px 10px;
+    font-size: 90%;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    z-index: 20;
+}
+
+.text-nowrap {
+    white-space: nowrap;
+}
+
+.text-200per {
+    width: 200%;
+    max-width: 200%;
+}
+
+.player-speach-top {
+    top: 125%;
+    left: -20%;
+}
+
+.player-speach-left {
+    top: -57%;
+    left: 120%;
+}
+
+.player-speach-right {
+    top: -57%;
+    right: 120%;
+}
+
+.player-speach-bottom {
+    top: -150%;
+    left: -5%;
+    color: black;
+}
+
+.speach-anchor-top {
+    position: absolute;
+    top: 90%;
+    left: 40%;
+    width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-bottom: 50px solid rgb(243, 231, 214);
+    transform: skew(0deg);
+    z-index: 19;
+}
+
+.speach-anchor-left {
+    position: absolute;
+    top: -40%;
+    left: 112%;
+    width: 0;
+	height: 0;
+	border-left: -20px solid transparent;
+	border-right: 20px solid transparent;
+	border-top: 50px solid rgb(243, 231, 214);
+    transform: skew(-35deg);
+    z-index: 19;
+}
+
+.speach-anchor-right {
+    position: absolute;
+    top: -40%;
+    right: 112%;
+    width: 0;
+	height: 0;
+	border-left: 20px solid transparent;
+	border-right: -20px solid transparent;
+	border-top: 50px solid rgb(243, 231, 214);
+    transform: skew(35deg);
+    z-index: 19;
+}
+
+.speach-anchor-bottom {
+    position: absolute;
+    top: -110%;
+    left: 40%;
+    width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 80px solid rgb(243, 231, 214);
+    transform: skew(0deg);
+    z-index: 9;
+}
+
 #layer {
     display: none; /* none block */
     position: fixed;
@@ -432,7 +526,7 @@ img {
     left: 0;
     background: rgba(0, 0, 0, .3);
     text-align: center;
-    z-index: 20;
+    z-index: 30;
   }
    
 #layer::before {
