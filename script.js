@@ -48,15 +48,16 @@ function workarea_render() {
                 card_pos_min = -25;
                 card_pos_dist = 128;
             }
-            console.log('user_maps: ' + data.players_data.user1.cards); //убери потом
+            let user_cards = data.players_data.user1.cards;
             for (let i = 1; i <= data.cards_info.each_player; i++) {
                 let card = document.createElement('div');
                 card.className = "card bottom-card own-card";
                 let card_pos = card_pos_min + (i - 1) * (Math.floor((card_pos_dist / (data.cards_info.each_player - 1)) * 100) / 100);
                 card.style.left = card_pos + "%";
 
+                let card_key = i - 1;
                 let card_img = document.createElement('img');
-                card_img.src = "images/cards/empty.png";
+                card_img.src = "images/cards/" + user_cards[card_key] + ".png";
                 card.append(card_img);
 
                 bottom_container.append(card);
@@ -289,6 +290,7 @@ function speach_clear() {
 }
 
 function new_user_action(data) {
+    console.log(data); //потом убрать
     let cards_info = get_cards_info(null);
 
     let workarea = document.querySelector('#workarea');
@@ -1306,7 +1308,7 @@ function get_cards_info(user_name) {
         "p5": { "id": "re", "type": "player", "name": "Рэна" },
         "p6": { "id": "si", "type": "player", "name": "Шион" },
         "p7": { "id": "sa", "type": "player", "name": "Сатоко" },
-        "w1": { "id": "w1", "type": "weapon", "name": "Топор" },
+        "w1": { "id": "w1", "type": "weapon", "name": "Тесак" },
         "w2": { "id": "w2", "type": "weapon", "name": "Нож" },
         "w3": { "id": "w3", "type": "weapon", "name": "Яд" },
         "w4": { "id": "w4", "type": "weapon", "name": "Пистолет" },
@@ -1329,13 +1331,13 @@ function get_cards_info(user_name) {
         "l5": { "id": "l5", "type": "location", "name": "Прихожая" },
         "l6": { "id": "l6", "type": "location", "name": "Чердак" },
         "l7": { "id": "l7", "type": "location", "name": "Река" },
-        "l8": { "id": "l8", "type": "location", "name": "Спортзал" },
+        "l8": { "id": "l8", "type": "location", "name": "Мост" },
         "l9": { "id": "l9", "type": "location", "name": "Кладбище" },
         "l10": { "id": "l10", "type": "location", "name": "Сарай" },
         "l11": { "id": "l11", "type": "location", "name": "Библиотека" },
         "l12": { "id": "l12", "type": "location", "name": "Школа" },
         "l13": { "id": "l13", "type": "location", "name": "Офис" },
-        "l14": { "id": "l14", "type": "location", "name": "Склад" },
+        "l14": { "id": "l14", "type": "location", "name": "Бункер" },
         "l15": { "id": "l15", "type": "location", "name": "Подвал" },
         "l16": { "id": "l16", "type": "location", "name": "Лес" },
         "l17": { "id": "l17", "type": "location", "name": "Свалка" },
