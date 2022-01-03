@@ -36,6 +36,7 @@ function workarea_render() {
     let right_container = document.querySelector('#right-container-area');
     let bottom_container = document.querySelector('#bottom-container-area');
 
+    let cards_info = get_cards_info(data.user_name);
     for (let player_key in data.players_data) {
         player = data.players_data[player_key];
         if (player.type == "user") {
@@ -58,6 +59,19 @@ function workarea_render() {
                 let card_key = i - 1;
                 let card_img = document.createElement('img');
                 card_img.src = "images/cards/" + user_cards[card_key] + ".png";
+                /*
+                if (cards_info[user_cards[card_key]]['id'] == "user1") {
+                    let user_card_name = document.createElement('div');
+                    user_card_name.className = "user-card-name";
+                    user_card_name.innerHTML = "Юзер";
+                    user_card_name.style['z-index'] = 20;
+
+                    let user_card_name_container = document.createElement('div');
+                    user_card_name_container.className = "user-card-name-container";
+                    user_card_name_container.append(user_card_name);
+
+                    card.append(user_card_name_container);
+                }*/
                 card.append(card_img);
 
                 bottom_container.append(card);
@@ -380,7 +394,6 @@ function new_user_action(data) {
         weapon_selector.append(weapon_option);
     }
 
-
     let modal_center_location = document.createElement('div');
     modal_center_location.id = "modal-center-location";
     modal_center.append(modal_center_location);
@@ -410,7 +423,6 @@ function new_user_action(data) {
         location_option.innerHTML = card_name;
         location_selector.append(location_option);
     }
-
 
     let modal_bottom = document.createElement('div');
     modal_bottom.id = "modal-bottom";
@@ -826,9 +838,9 @@ function new_bot_action() {
 
     //подготовка к проверкам - распределение по группам
     let true_cards = 0;
-    let cards_player = { 'total': [], 'false': [], 'unknown': [] };
-    let cards_weapon = { 'total': [], 'false': [], 'unknown': [] };
-    let cards_location = { 'total': [], 'false': [], 'unknown': [] };
+    let cards_player = { 'total': [], 'false': [], 'unknown': [], 'true': false };
+    let cards_weapon = { 'total': [], 'false': [], 'unknown': [], 'true': false };
+    let cards_location = { 'total': [], 'false': [], 'unknown': [], 'true': false };
     for (card in calc_list) {
         if (cards_info[card]["type"] == "player") {
             cards_player['total'].push(card);
@@ -860,6 +872,48 @@ function new_bot_action() {
             } else {
                 cards_location['unknown'].push(card);
             }
+        }
+    }
+
+    //корректировки групп
+    for (let i = 0; i < 3; i++) {
+        let cards_group = false;
+        if (i == 0) {
+            cards_group = cards_player;
+        } else if (i == 1) {
+            cards_group = cards_weapon;
+        } else if (i == 2) {
+            cards_group = cards_location;
+        }
+        //корректировка
+        if (!cards_group['true'] && cards_group['unknown'].length == 1) {
+            let move_card = cards_group['unknown'][0];
+            cards_group['true'] = move_card;
+            cards_group['unknown'] = [];
+            calc_list[move_card]["rate"] = 10000;
+            //console.log('correct1 ' + move_card);
+        } else if (!cards_group['true'] && cards_group['unknown'].length > 1) {
+            let total_rate = 0
+            for (card of cards_group['unknown']) {
+                total_rate = total_rate + calc_list[card]["rate"];
+            }
+            let average_rate = Math.round(total_rate / cards_group['unknown'].length);
+            let dev_list = [];
+            for (card of cards_group['unknown']) {
+                let rate = calc_list[card]["rate"];
+                let deviation = rate - average_rate;
+                dev_list.push({ name: card, val: deviation });
+            }
+            dev_list.sort(function (a, b) { return b.val - a.val; });
+            let max_dev_card = dev_list[0]['name'];
+            if (neutral_to_true_check(player, dev_list[0]['val'], dev_list[1]['val'], calc_list[max_dev_card]["actions"], cards_group['unknown'].length)) {
+                cards_group['true'] = max_dev_card;
+                cards_group['unknown'].splice(cards_group['unknown'].indexOf(max_dev_card), 1);
+                calc_list[max_dev_card]["rate"] = 10000;
+                //console.log('correct2 ' + max_dev_card);
+            }
+        } else {
+            //console.log('НЕ запуск для ' + player + ' i=' + i + ' верная группа' + cards_group['true'] + 'длина распр. ' + cards_group['unknown'].length);
         }
     }
 
@@ -955,6 +1009,9 @@ function new_bot_action() {
             unknown_array = cards_player['false'];
         }
         player_pick = neutral_distribution_select(unknown_array, calc_list);
+        if (!player_pick) {
+            player_pick = arrayRandElement(cards_player['total']);
+        }
     }
     if (!weapon_pick) { //неизвестно оружие
         let unknown_array = cards_weapon['unknown'];
@@ -962,6 +1019,9 @@ function new_bot_action() {
             unknown_array = cards_weapon['false'];
         }
         weapon_pick = neutral_distribution_select(unknown_array, calc_list);
+        if (!weapon_pick) {
+            weapon_pick = arrayRandElement(cards_weapon['total']);
+        }
     }
     if (!location_pick) { //неизвестно место
         let unknown_array = cards_location['unknown'];
@@ -969,6 +1029,9 @@ function new_bot_action() {
             unknown_array = cards_location['false'];
         }
         location_pick = neutral_distribution_select(unknown_array, calc_list);
+        if (!location_pick) {
+            location_pick = arrayRandElement(cards_location['total']);
+        }
     }
     let bot_selected = [player_pick, weapon_pick, location_pick];
     console.log('selected ' + bot_selected);
@@ -1027,7 +1090,10 @@ function neutral_distribution_select(array, calc_list) {
             chance = base_chance;
         }
         //чем чаще спрашивали карту, тем меньше шанс ее выбора
-        chance = Math.round(chance / Math.sqrt(actions + 1));
+        chance = Math.round(chance / Math.sqrt(actions * 2 + 1)); //*2 для увеличенной поправки
+        if (chance < 1) {
+            chance = 1;
+        }
         //распределяем карты с шансами по отрезку
         selection[card] = { "min": selection_point };
         selection_point = selection_point + chance;
@@ -1063,6 +1129,47 @@ function neutral_distribution_target_check(array, calc_list) {
         }
     }
     return false;
+}
+
+//проверка на выведение карты из нейтрального распределения в предположительно верную
+function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actions, neutral_amount) {
+    //задать параметры для игроков
+    let params = {
+        'ri': { 'border': 30, 'chance': 10 }, //Рика - осторожная, при превышении бьет наверняка
+        'ha': { 'border': 30, 'chance': 5 }, //Ханю - осторожная
+        'mi': { 'border': 20, 'chance': 5 }, //Мион - средняя, средний шанс
+        're': { 'border': 40, 'chance': 3 }, //Рэна - максимальная осторожность
+        'si': { 'border': 20, 'chance': 8 }, //Шион - средняя, бьет решительно
+        'sa': { 'border': 15, 'chance': 8 }, //Сатоко - максимально агрессивная
+    };
+    let player_border = params[player_id]['border'];
+    let player_chance = params[player_id]['chance'];
+    //нулевая проверка - по заполненности данных (исключение ошибок)
+    if (!player_border || !player_chance) {
+        return false;
+    }
+    //первая проверка - по верхней хотя бы 2 проверки
+    if (neutral_amount <= 1) {
+        return false;
+    }
+    //вторая проверка - отклонение верхней превышает порог с поправкой на оставшееся число в распределении
+    let real_border = Math.floor((neutral_amount / 5) * player_border);
+    if (first_dev_rate < real_border) {
+        //console.log('не превышает границы, надо ' + real_border);
+        return false;
+    }
+    //третья проверка - увеличивается шанс прохода в зависимости от отклонения между 1 и 2
+    let dev_amount = first_dev_rate - second_dev_rate;
+    let k = dev_amount / 20; //если больше 20 - шанс возрастает прогрессией 3-ей степени
+    let real_chance = Math.floor(player_chance * Math.pow(k, 3));
+    let random_value = Math.floor(Math.random() * 100);
+    if (random_value < real_chance) {
+        //console.log('ПРОШЛО по разнице 1-2, шанс ' + real_chance);
+        return true;
+    } else {
+        //console.log('не прошло по разнице 1-2, шанс ' + real_chance);
+        return false;
+    }
 }
 
 function player_speach_show(position, side, text) {

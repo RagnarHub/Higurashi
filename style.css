@@ -355,6 +355,28 @@ img {
     bottom: calc(33%);
 }
 
+/* did't use */
+.user-card-name-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: inherit;
+    top: inherit;
+}
+
+/* did't use */
+.user-card-name {
+    position: absolute;
+    top: calc(30px - 1.5vw);
+    left: calc(-40px - 2vw);
+    writing-mode: vertical-lr; 
+    text-orientation: upright; 
+    color: blue;
+    font-size: 130%;
+    letter-spacing: -0.5em;
+    font-family: 'Segoe Print', 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
 /* borders */
 
 .ri-border {
