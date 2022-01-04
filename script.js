@@ -254,8 +254,14 @@ function forced_render(storage_data) {
     } else if (storage_data.phase.point == "bot_assumption") {
         show_bot_selected();
         assumption_reaction(true, true);
+    } else if (storage_data.phase.point == "bot_answer_action") {
+        show_bot_answer();
+    } else if (storage_data.phase.point == "user_answer") {
+        answer_button_click(true, false)
+    } else if (storage_data.phase.point == "bot_answer") {
+        show_bot_answer();
+        answer_button_click(true, true)
     }
-
 }
 
 function restart_button_click() {
@@ -265,13 +271,17 @@ function restart_button_click() {
     document.querySelector('#left-container-area').innerHTML = null;
     document.querySelector('#right-container-area').innerHTML = null;
     document.querySelector('#bottom-container-area').innerHTML = null;
+    let workarea = document.querySelector('#workarea');
+    let answer_cards = document.querySelectorAll('.answer-card');
+    for (let i = 0; i < answer_cards.length; i++) {
+        workarea.removeChild(answer_cards[i]);
+    }
     startpage_render();
 }
 
 function next_button_click() {
     let block = JSON.parse(localStorage.getItem('button_block'));
     if (block == true) {
-        console.log('return');
         return false;
     }
     check_time();
@@ -287,6 +297,11 @@ function next_button_click() {
     } else if (data.phase.point == "bot_assumption") {
         speach_clear();
         assumption_calc(data);
+    } else if (data.phase.point == "bot_answer_action") {
+        answer_button_click(false, true);
+    } else if (data.phase.point == "user_answer" || data.phase.point == "bot_answer") {
+        speach_clear();
+        next_round(data);
     } else {
         speach_clear();
         console.log('not a new action');
@@ -304,8 +319,7 @@ function speach_clear() {
 }
 
 function new_user_action(data) {
-    console.log(data); //потом убрать
-    let cards_info = get_cards_info(null);
+    let cards_info = get_cards_info(data.user_name);
 
     let workarea = document.querySelector('#workarea');
     workarea.style.opacity = "1.0";
@@ -499,7 +513,7 @@ function assumption_reaction(forced_render = false, bot_action = false) {
     let first_delay = 100;
     if (bot_action !== true) {
         let player = data.phase.active_player;
-        let cards_info = get_cards_info(null);
+        let cards_info = get_cards_info(data.user_name);
         let text = data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
         player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
         first_delay = first_delay + 300;
@@ -691,13 +705,21 @@ function assumption_calc(data) {
     }
     data.history.push({ "player": active_player, "selected": selected }); //запись в историю
     //перевод действия на следующий ход
+    next_action_prepare(data);
+}
+
+function next_action_prepare(data, repeat_action = false) {
     let order = clone(data.order);
-    order = order.splice(order.indexOf(position)).concat(order);
-    data.phase.position = order[1];
+    order = order.splice(order.indexOf(data.phase.position)).concat(order);
+    if (repeat_action) {
+        data.phase.position = order[0];
+    } else {
+        data.phase.position = order[1];
+    }
     let next_player_type = null;
     for (player_id in data.players_data) {
         let player = data.players_data[player_id];
-        if (player.pos == order[1]) {
+        if (player.pos == data.phase.position) {
             data.phase.active_player = player.id;
             next_player_type = player.type;
         }
@@ -713,7 +735,9 @@ function assumption_calc(data) {
         next_button.textContent = "Догадка";
         data.phase.point = "user_action";
         update_data(data);
-        new_user_action(data);
+        if (!repeat_action) {
+            new_user_action(data);
+        }
     }
 }
 
@@ -917,6 +941,16 @@ function new_bot_action() {
         }
     }
 
+    //проверка готовности дать ответ (все известно)
+    if (cards_player['true'] && cards_weapon['true'] && cards_location['true']) {
+        let bot_selected = [cards_player['true'], cards_weapon['true'], cards_location['true']];
+        data.phase.point = "bot_answer_action";
+        data.phase.assumption = bot_selected;
+        update_data(data);
+        show_bot_answer();
+        return true;
+    }
+
     //определение стратегии
     let player_pick = null;
     let weapon_pick = null;
@@ -1034,7 +1068,7 @@ function new_bot_action() {
         }
     }
     let bot_selected = [player_pick, weapon_pick, location_pick];
-    console.log('selected ' + bot_selected);
+    //console.log('selected ' + bot_selected);
     data.phase.point = "bot_action";
     data.phase.assumption = bot_selected;
     update_data(data);
@@ -1048,6 +1082,17 @@ function show_bot_selected() {
     let cards_info = get_cards_info(data.user_name);
     let selected = data.phase.assumption;
     let text = data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
+    setTimeout(() => {
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+    }, 300);
+}
+
+function show_bot_answer() {
+    let data = get_data();
+    let player = data.phase.active_player;
+    let cards_info = get_cards_info(data.user_name);
+    let selected = data.phase.assumption;
+    let text = data.players_data[player]["name"] + " : Я знаю ответ! Преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
     setTimeout(() => {
         player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
     }, 300);
@@ -1212,12 +1257,171 @@ function is_player_next(data, next_pos) {
 }
 
 
+function answer_button_click(forced_render = false, bot_action = false) {
+    let data = get_data();
+    let cards_info = get_cards_info(data.user_name);
+    let selected = [];
 
-function answer_button_click() {
-    check_time();
-    console.log('answer');
+    if (forced_render === true || bot_action === true) {
+        selected = data.phase.assumption;
+    } else {
+        let player_selector = document.querySelector('#person-selector');
+        let weapon_selector = document.querySelector('#weapon-selector');
+        let location_selector = document.querySelector('#location-selector');
+        let selected_player = player_selector.options[player_selector.options.selectedIndex].getAttribute('card_code');
+        let selected_weapon = weapon_selector.options[weapon_selector.options.selectedIndex].getAttribute('card_code');
+        let selected_location = location_selector.options[location_selector.options.selectedIndex].getAttribute('card_code');
+        selected = [selected_player, selected_weapon, selected_location];
+
+        check_time();
+        let workarea = document.querySelector('#workarea');
+        workarea.style.opacity = "0.95";
+
+        let layer = document.querySelector('#layer');
+        layer.style.display = 'none';
+        while (layer.firstChild) {
+            layer.removeChild(layer.firstChild);
+        }
+
+        let next_button = document.querySelector('#next-button');
+        next_button.textContent = "Продолжить";
+        data.phase.point = "user_answer";
+        data.phase.assumption = selected;
+    }
+    if (bot_action === true && forced_render !== true) {
+        data.phase.point = "bot_answer";
+    }
+
+    let first_delay = 1000;
+    if (bot_action !== true) {
+        let player = data.phase.active_player;
+        let text = data.players_data[player]["name"] + " : Я знаю ответ! Преступник - " + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+    }
+
+    //расчет верного ответа
+    let all_players_cards = [];
+    let answer = [];
+    for (player_id in data.players_data) {
+        let player = data.players_data[player_id];
+        all_players_cards = all_players_cards.concat(player.cards);
+    }
+    for (card_unit of data.cards_info.cards_list) {
+        if (!in_array(card_unit, all_players_cards)) {
+            answer.push(card_unit);
+        }
+    }
+
+    //проверка ответа
+    let answer_result = false;
+    if (selected.length === answer.length && selected.sort().every(function (value, index) { return value === answer.sort()[index] })) {
+        answer_result = true;
+    }
+    data.phase['answer_result'] = answer_result;
+    update_data(data);
+
+    //показать карты из ответа
+    localStorage.setItem('button_block', JSON.stringify(true));
+    setTimeout(() => {
+        let workarea = document.querySelector('#workarea');
+        for (let i = 0; i <= 2; i++) {
+            let answer_card = document.createElement('div');
+            answer_card.className = "answer-card";
+            answer_card.style.left = (28 + 15 * i) + "%";
+            answer_card.style['z-index'] = 50 + i;
+            let answer_card_img = document.createElement('img');
+            answer_card_img.src = "images/cards/" + answer[i] + ".png";
+            answer_card.append(answer_card_img);
+            workarea.append(answer_card);
+        }
+    }, 500);
+
+    //расчет порядка ходов и реакция
+    let order = clone(data.order);
+    order = order.splice(order.indexOf(data.phase.position)).concat(order);
+    let reaction = [];
+    setTimeout(() => {
+        for (let i = 1; i < data.players_amount; i++) {
+            let order_now = order[i];
+            //sleep(500);
+            let delay = 300 * i;
+            let unblock = false;
+            if (i == data.players_amount - 1) {
+                unblock = true;
+            }
+            answer_react(data, order_now, answer_result, delay, unblock);
+        }
+        update_data(data);
+        if (is_player_next(data, order[1]) == true) {
+            let next_button = document.querySelector('#next-button');
+        }
+    }, first_delay);
 }
 
+function answer_react(data, order_now, answer_result, delay, unblock) {
+    let player_id = null;
+    let player = null;
+    for (id in data.players_data) {
+        if (data.players_data[id]['pos'] == order_now) {
+            player_id = id;
+            player = data.players_data[id];
+        }
+    }
+
+    let text = '';
+    if (answer_result) {
+        text = 'Тебе просто повезло!';
+    } else {
+        text = 'Отчаянная, но безуспешная попытка';
+    }
+    setTimeout(() => {
+        player_speach_show(order_now, player.side, text);
+        if (unblock == true) {
+            localStorage.setItem('button_block', JSON.stringify(false));
+        }
+    }, delay);
+    return true;
+}
+
+function next_round(data) {
+    //расчет результатов
+    let score = data.players_data[data.phase.active_player].score;
+    let repeat_action = false;
+    if (data.phase['answer_result'] === true) {
+        data.players_data[data.phase.active_player].score = score + 1;
+        repeat_action = true;
+    } else if (data.phase['answer_result'] === false) {
+        data.players_data[data.phase.active_player].score = score - 1;
+    }
+    data.phase['answer_result'] = null;
+    //перераздача карт
+    let cards_players = data.cards_info.cards_players;
+    let cards_weapons = data.cards_info.cards_weapons;
+    let cards_locations = data.cards_info.cards_locations;
+    let players_data = data.players_data;
+    let cards_each_player = data.cards_info.each_player;
+    let cards_base_info = get_cards_info(data.user_name);
+    let cards_list = data.cards_info.cards_list;
+    let bots_amount = data.players_amount - 1;
+    let bots = data.bots;
+    set_players_cards(cards_players, cards_weapons, cards_locations, players_data, cards_each_player, cards_base_info, cards_list, bots_amount, bots);
+    data["history"] = [];
+    main_encoding(data);
+    //очистка и перерендер поля
+    check_time();
+    document.querySelector('#top-container-area').innerHTML = null;
+    document.querySelector('#left-container-area').innerHTML = null;
+    document.querySelector('#right-container-area').innerHTML = null;
+    document.querySelector('#bottom-container-area').innerHTML = null;
+    let workarea = document.querySelector('#workarea');
+    let answer_cards = document.querySelectorAll('.answer-card');
+    for (let i = 0; i < answer_cards.length; i++) {
+        workarea.removeChild(answer_cards[i]);
+    }
+    workarea_render();
+    //перевод действия на следующий ход
+    next_action_prepare(data, repeat_action);
+}
 
 
 
@@ -1317,6 +1521,45 @@ function set_data(players_amount, user_name) {
     let cards_each_player = (total_cards - 3) / players_amount;
     let cards_list = cards_players.concat(cards_weapons, cards_locations);
 
+    //раздача карт игрокам
+    set_players_cards(cards_players, cards_weapons, cards_locations, players_data, cards_each_player, cards_base_info, cards_list, bots_amount, bots);
+
+    let cards_info = {
+        "total": total_cards,
+        "players": player_cards,
+        "weapons": weapon_cards,
+        "locations": location_cards,
+        "each_player": cards_each_player,
+        "cards_list": cards_list,
+        "cards_players": cards_players,
+        "cards_weapons": cards_weapons,
+        "cards_locations": cards_locations,
+    }
+
+    let phase = {
+        "point": "user_action",
+        "position": "bottom",
+        "active_player": "user1",
+        "assumption": [],
+        "reaction": [],
+        "answer_result": null,
+    }
+
+    let data = {
+        "players_amount": players_amount,
+        "bots": bots,
+        "user_name": user_name,
+        "order": order,
+        "players_data": players_data,
+        "cards_info": cards_info,
+        "phase": phase,
+        "history": [],
+    }
+
+    main_encoding(data);
+}
+
+function set_players_cards(cards_players, cards_weapons, cards_locations, players_data, cards_each_player, cards_base_info, cards_list, bots_amount, bots) {
     let cards_players_rand = shuffle(cards_players.slice());
     let cards_weapons_rand = shuffle(cards_weapons.slice());
     let cards_locations_rand = shuffle(cards_locations.slice());
@@ -1344,37 +1587,9 @@ function set_data(players_amount, user_name) {
             players_data[bots[i]]['calc_list'][card]['rate'] = -10000;
         }
     }
+}
 
-    let cards_info = {
-        "total": total_cards,
-        "players": player_cards,
-        "weapons": weapon_cards,
-        "locations": location_cards,
-        "each_player": cards_each_player,
-        "cards_list": cards_list,
-        "cards_players": cards_players,
-        "cards_weapons": cards_weapons,
-        "cards_locations": cards_locations,
-    }
-
-    let phase = {
-        "point": "user_action",
-        "position": "bottom",
-        "active_player": "user1",
-        "assumption": [],
-        "reaction": [],
-    }
-
-    let data = {
-        "players_amount": players_amount,
-        "user_name": user_name,
-        "order": order,
-        "players_data": players_data,
-        "cards_info": cards_info,
-        "phase": phase,
-        "history": [],
-    }
-
+function main_encoding(data) {
     let key = '';
     key += String.fromCharCode(getRandomInt(100, 9999));
     key += String.fromCharCode(getRandomInt(100, 9999));

@@ -355,6 +355,15 @@ img {
     bottom: calc(33%);
 }
 
+.answer-card {
+    height: calc(90vh * 0.24);
+    width: calc(90vw * 0.132);
+    min-height: 131px;
+    min-width: 75px;
+    position: absolute;
+    top: 35%;
+}
+
 /* did't use */
 .user-card-name-container {
     width: 100%;
