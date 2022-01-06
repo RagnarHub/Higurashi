@@ -514,8 +514,13 @@ function assumption_reaction(forced_render = false, bot_action = false) {
     if (bot_action !== true) {
         let player = data.phase.active_player;
         let cards_info = get_cards_info(data.user_name);
-        let text = data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
-        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+        let text = data.players_data[player]["name"];
+        let text_block = data.players_data[player]["name"];
+        text = text + ' : Думаю, что преступник - ';
+        text_block = text_block + ' : Думаю, что преступник - <span class="color_person">';
+        text = text + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
+        text_block = text_block + cards_info[selected[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[selected[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[selected[2]]["name"] + '</span>';
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text, text_block);
         first_delay = first_delay + 300;
     }
 
@@ -562,14 +567,16 @@ function action_react(data, order_now, selected, reaction, delay, unblock) {
     }
 
     let text = '';
+    let text_block = false;
     if (have_card) {
         reaction.push(player_id);
         text = 'У меня есть!';
+        text_block = '<span class="color_has_card">У меня есть!</span>';
     } else {
         text = 'У меня нету';
     }
     setTimeout(() => {
-        player_speach_show(order_now, player.side, text);
+        player_speach_show(order_now, player.side, text, text_block);
         if (unblock == true) {
             localStorage.setItem('button_block', JSON.stringify(false));
         }
@@ -601,6 +608,25 @@ function assumption_calc(data) {
                 }
             }
         }
+        //распределение по группам (правильная / неправильная / неизвестная)
+        let calc_list = player_data.calc_list;
+        let cards_info = get_cards_info(data.user_name);
+        let groups = group_distribution(player_id, calc_list, cards_info, false, true);
+        let true_cards = groups['true_cards'];
+        let cards_player = groups['cards_player'];
+        let cards_weapon = groups['cards_weapon'];
+        let cards_location = groups['cards_location'];
+        let true_cards_in_selected = [];
+        if (in_array(cards_player['true'], selected)) {
+            true_cards_in_selected.push(cards_player['true']);
+        }
+        if (in_array(cards_weapon['true'], selected)) {
+            true_cards_in_selected.push(cards_weapon['true']);
+        }
+        if (in_array(cards_location['true'], selected)) {
+            true_cards_in_selected.push(cards_location['true']);
+        }
+        //проверка ответа самого игрока
         let player_reaction = false;
         if (in_array(player_id, data.phase.reaction, false)) {
             player_reaction = true; //один из ответивших
@@ -611,23 +637,27 @@ function assumption_calc(data) {
                 player_data['calc_list'][selected_card]['rate'] = 10000; //все неизвестные - точно верные
             }
         }
-        //спрашивал сам, ответило по количеству неизвестных
-        else if (self_calc && reaction_amount == self_unknown) {
-            for (let selected_card of self_unknown_cards) {
-                player_data['calc_list'][selected_card]['rate'] = -10000; //все неизвестные - точно неверные
-            }
-        }
-        //ответили трое
-        else if (reaction_amount == 3) {
+        //ответили по количеству неизвестных (спрашивал сам или нет)
+        else if (reaction_amount == self_unknown) {
             for (let selected_card of selected) {
                 if (!in_array(selected_card, player_data.cards)) {
                     player_data['calc_list'][selected_card]['rate'] = -10000; //исключаем все из запроса
                 }
             }
         }
+        //ответили по количеству неизвестных (с учетом заведомо правильных карт в вопросе)
+        else if (reaction_amount == (self_unknown - true_cards_in_selected.length)) {
+            console.log('new root');
+            console.log(true_cards_in_selected);
+            for (let selected_card of selected) {
+                if (!in_array(selected_card, player_data.cards) && !in_array(selected_card, true_cards_in_selected)) {
+                    player_data['calc_list'][selected_card]['rate'] = -10000; //исключаем все из запроса
+                }
+            }
+        }
         //ответили двое, он среди них; либо спрашивал сам, неизвестных 2, ответил 1
         else if ((reaction_amount == 2 && player_reaction) || (self_calc && reaction_amount == 1 && self_unknown == 2)) {
-            if (selected.filter(x => player_data.cards.includes(x)).length == 2) { //у него 2 карты из запроса
+            if (selected.filter(x => player_data.cards.includes(x)).length >= 2) { //у него 2 карты из запроса
                 for (let selected_card of selected.filter(x => !player_data.cards.includes(x))) {
                     player_data['calc_list'][selected_card]['rate'] = -10000; //исключаем третью
                 }
@@ -861,85 +891,11 @@ function new_bot_action() {
     let cards_info = get_cards_info(data.user_name);
 
     //подготовка к проверкам - распределение по группам
-    let true_cards = 0;
-    let cards_player = { 'total': [], 'false': [], 'unknown': [], 'true': false };
-    let cards_weapon = { 'total': [], 'false': [], 'unknown': [], 'true': false };
-    let cards_location = { 'total': [], 'false': [], 'unknown': [], 'true': false };
-    for (card in calc_list) {
-        if (cards_info[card]["type"] == "player") {
-            cards_player['total'].push(card);
-            if (calc_list[card]["rate"] > 5000) {
-                cards_player['true'] = card;
-                true_cards++;
-            } else if (calc_list[card]["rate"] < -5000) {
-                cards_player['false'].push(card);
-            } else {
-                cards_player['unknown'].push(card);
-            }
-        } else if (cards_info[card]["type"] == "weapon") {
-            cards_weapon['total'].push(card);
-            if (calc_list[card]["rate"] > 5000) {
-                cards_weapon['true'] = card;
-                true_cards++;
-            } else if (calc_list[card]["rate"] < -5000) {
-                cards_weapon['false'].push(card);
-            } else {
-                cards_weapon['unknown'].push(card);
-            }
-        } else if (cards_info[card]["type"] == "location") {
-            cards_location['total'].push(card);
-            if (calc_list[card]["rate"] > 5000) {
-                cards_location['true'] = card;
-                true_cards++;
-            } else if (calc_list[card]["rate"] < -5000) {
-                cards_location['false'].push(card);
-            } else {
-                cards_location['unknown'].push(card);
-            }
-        }
-    }
-
-    //корректировки групп
-    for (let i = 0; i < 3; i++) {
-        let cards_group = false;
-        if (i == 0) {
-            cards_group = cards_player;
-        } else if (i == 1) {
-            cards_group = cards_weapon;
-        } else if (i == 2) {
-            cards_group = cards_location;
-        }
-        //корректировка
-        if (!cards_group['true'] && cards_group['unknown'].length == 1) {
-            let move_card = cards_group['unknown'][0];
-            cards_group['true'] = move_card;
-            cards_group['unknown'] = [];
-            calc_list[move_card]["rate"] = 10000;
-            //console.log('correct1 ' + move_card);
-        } else if (!cards_group['true'] && cards_group['unknown'].length > 1) {
-            let total_rate = 0
-            for (card of cards_group['unknown']) {
-                total_rate = total_rate + calc_list[card]["rate"];
-            }
-            let average_rate = Math.round(total_rate / cards_group['unknown'].length);
-            let dev_list = [];
-            for (card of cards_group['unknown']) {
-                let rate = calc_list[card]["rate"];
-                let deviation = rate - average_rate;
-                dev_list.push({ name: card, val: deviation });
-            }
-            dev_list.sort(function (a, b) { return b.val - a.val; });
-            let max_dev_card = dev_list[0]['name'];
-            if (neutral_to_true_check(player, dev_list[0]['val'], dev_list[1]['val'], calc_list[max_dev_card]["actions"], cards_group['unknown'].length)) {
-                cards_group['true'] = max_dev_card;
-                cards_group['unknown'].splice(cards_group['unknown'].indexOf(max_dev_card), 1);
-                calc_list[max_dev_card]["rate"] = 10000;
-                //console.log('correct2 ' + max_dev_card);
-            }
-        } else {
-            //console.log('НЕ запуск для ' + player + ' i=' + i + ' верная группа' + cards_group['true'] + 'длина распр. ' + cards_group['unknown'].length);
-        }
-    }
+    let groups = group_distribution(player, calc_list, cards_info, true, false);
+    let true_cards = groups['true_cards'];
+    let cards_player = groups['cards_player'];
+    let cards_weapon = groups['cards_weapon'];
+    let cards_location = groups['cards_location'];
 
     //проверка готовности дать ответ (все известно)
     if (cards_player['true'] && cards_weapon['true'] && cards_location['true']) {
@@ -1081,9 +1037,14 @@ function show_bot_selected() {
     let player = data.phase.active_player;
     let cards_info = get_cards_info(data.user_name);
     let selected = data.phase.assumption;
-    let text = data.players_data[player]["name"] + " : Думаю, что преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
+    let text = data.players_data[player]["name"];
+    let text_block = data.players_data[player]["name"];
+    text = text + ' : Думаю, что преступник - ';
+    text_block = text_block + ' : Думаю, что преступник - <span class="color_person">';
+    text = text + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
+    text_block = text_block + cards_info[data.phase.assumption[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[data.phase.assumption[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[data.phase.assumption[2]]["name"] + '</span>';
     setTimeout(() => {
-        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text, text_block);
     }, 300);
 }
 
@@ -1092,10 +1053,111 @@ function show_bot_answer() {
     let player = data.phase.active_player;
     let cards_info = get_cards_info(data.user_name);
     let selected = data.phase.assumption;
-    let text = data.players_data[player]["name"] + " : Я знаю ответ! Преступник - " + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
+    let text = data.players_data[player]["name"];
+    let text_block = data.players_data[player]["name"];
+    text = text + ' : Я ЗНАЮ ОТВЕТ! Преступник - ';
+    text_block = text_block + ' : <span class="color_answer">Я ЗНАЮ ОТВЕТ!</span> Преступник - <span class="color_person">';
+    text = text + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
+    text_block = text_block + cards_info[data.phase.assumption[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[data.phase.assumption[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[data.phase.assumption[2]]["name"] + '</span>';
+
     setTimeout(() => {
-        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text, text_block);
     }, 300);
+}
+
+function group_distribution(player, calc_list, cards_info, extra_correct, return_only_real) {
+    let true_border = 5000;
+    if (return_only_real) {
+        true_border = 9000;
+    }
+    //подготовка к проверкам - распределение по группам
+    let true_cards = 0;
+    let cards_player = { 'total': [], 'false': [], 'unknown': [], 'true': false };
+    let cards_weapon = { 'total': [], 'false': [], 'unknown': [], 'true': false };
+    let cards_location = { 'total': [], 'false': [], 'unknown': [], 'true': false };
+    for (card in calc_list) {
+        if (cards_info[card]["type"] == "player") {
+            cards_player['total'].push(card);
+            if (calc_list[card]["rate"] > true_border) {
+                cards_player['true'] = card;
+                true_cards++;
+            } else if (calc_list[card]["rate"] < -5000) {
+                cards_player['false'].push(card);
+            } else {
+                cards_player['unknown'].push(card);
+            }
+        } else if (cards_info[card]["type"] == "weapon") {
+            cards_weapon['total'].push(card);
+            if (calc_list[card]["rate"] > true_border) {
+                cards_weapon['true'] = card;
+                true_cards++;
+            } else if (calc_list[card]["rate"] < -5000) {
+                cards_weapon['false'].push(card);
+            } else {
+                cards_weapon['unknown'].push(card);
+            }
+        } else if (cards_info[card]["type"] == "location") {
+            cards_location['total'].push(card);
+            if (calc_list[card]["rate"] > true_border) {
+                cards_location['true'] = card;
+                true_cards++;
+            } else if (calc_list[card]["rate"] < -5000) {
+                cards_location['false'].push(card);
+            } else {
+                cards_location['unknown'].push(card);
+            }
+        }
+    }
+    //корректировки групп
+    for (let i = 0; i < 3; i++) {
+        let cards_group = false;
+        if (i == 0) {
+            cards_group = cards_player;
+        } else if (i == 1) {
+            cards_group = cards_weapon;
+        } else if (i == 2) {
+            cards_group = cards_location;
+        }
+        //основная корректировка (поиск правильных)
+        if (!cards_group['true'] && cards_group['unknown'].length == 1) {
+            let move_card = cards_group['unknown'][0];
+            cards_group['true'] = move_card;
+            cards_group['unknown'] = [];
+            calc_list[move_card]["rate"] = 10000; //наверняка верная
+            //console.log('correct1 ' + move_card);
+        }
+        //поправочная вероятностная корректировка
+        if (extra_correct && !cards_group['true'] && cards_group['unknown'].length > 1) {
+            let total_rate = 0
+            for (card of cards_group['unknown']) {
+                total_rate = total_rate + calc_list[card]["rate"];
+            }
+            let average_rate = Math.round(total_rate / cards_group['unknown'].length);
+            let dev_list = [];
+            for (card of cards_group['unknown']) {
+                let rate = calc_list[card]["rate"];
+                let deviation = rate - average_rate;
+                dev_list.push({ name: card, val: deviation });
+            }
+            dev_list.sort(function (a, b) { return b.val - a.val; });
+            let max_dev_card = dev_list[0]['name'];
+            if (neutral_to_true_check(player, dev_list[0]['val'], dev_list[1]['val'], calc_list[max_dev_card]["actions"], cards_group['unknown'].length)) {
+                cards_group['true'] = max_dev_card;
+                cards_group['unknown'].splice(cards_group['unknown'].indexOf(max_dev_card), 1);
+                calc_list[max_dev_card]["rate"] = 8000; //вероятностно верная
+                //console.log('correct2 ' + max_dev_card);
+            }
+        } else {
+            //console.log('НЕ запуск для ' + player + ' i=' + i + ' верная группа' + cards_group['true'] + 'длина распр. ' + cards_group['unknown'].length);
+        }
+    }
+    let result = {
+        'true_cards': true_cards,
+        'cards_player': cards_player,
+        'cards_weapon': cards_weapon,
+        'cards_location': cards_location,
+    };
+    return result;
 }
 
 //выбор точно отрицательной карты для "ложной" части запроса
@@ -1217,7 +1279,7 @@ function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actio
     }
 }
 
-function player_speach_show(position, side, text) {
+function player_speach_show(position, side, text, text_block = false) {
     //text = "Я думаю, что преступник - ты, орудие - твои руки, место - где-то"
     let pos_player = null;
     if (position == "bottom") {
@@ -1228,7 +1290,11 @@ function player_speach_show(position, side, text) {
     }
 
     let player_speach = document.createElement('div');
-    player_speach.textContent = text;
+    if (text_block) {
+        player_speach.innerHTML = text_block;
+    } else {
+        player_speach.textContent = text;
+    }
     player_speach.className = "player-speach player-speach-" + side;
     if (text.length <= 20) {
         player_speach.classList.add("text-nowrap");
@@ -1295,8 +1361,13 @@ function answer_button_click(forced_render = false, bot_action = false) {
     let first_delay = 1000;
     if (bot_action !== true) {
         let player = data.phase.active_player;
-        let text = data.players_data[player]["name"] + " : Я знаю ответ! Преступник - " + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
-        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text);
+        let text = data.players_data[player]["name"];
+        let text_block = data.players_data[player]["name"];
+        text = text + ' : Я ЗНАЮ ОТВЕТ! Преступник - ';
+        text_block = text_block + ' : <span class="color_answer">Я ЗНАЮ ОТВЕТ!</span> Преступник - <span class="color_person">';
+        text = text + cards_info[selected[0]]["name"] + ", орудие - " + cards_info[selected[1]]["name"] + ", место - " + cards_info[selected[2]]["name"];
+        text_block = text_block + cards_info[selected[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[selected[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[selected[2]]["name"] + '</span>';
+        player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text, text_block);
     }
 
     //расчет верного ответа
@@ -1482,7 +1553,7 @@ function set_data(players_amount, user_name) {
     } else if (players_amount == 3) {
         sides = ['left', 'right'];
         positions = ['tleft', 'tright'];
-        order = ['cright', 'bottom', 'cleft'];
+        order = ['tright', 'bottom', 'tleft'];
         total_cards = 33;
         weapon_cards = 15;
         location_cards = 15;
