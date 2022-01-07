@@ -13,6 +13,7 @@
     min-width: 500px;
     border: 2px solid white;
     position: relative;
+    perspective: 600px;
 }
 
 .workarea-day {
@@ -362,6 +363,25 @@ img {
     min-width: 75px;
     position: absolute;
     top: 35%;
+    transition: transform 1s;
+
+}
+
+.answer-card-img {
+    position: absolute;
+    transform: rotateY(180deg);
+}
+
+.answer-card-img-back {
+    position: absolute;
+}
+
+.is-flipped {
+    transform: rotateY(180deg);
+}
+
+.is-flipped2 {
+    visibility: hidden;
 }
 
 /* did't use */
