@@ -534,7 +534,8 @@ img {
 
 .player-speach-bottom {
     top: -150%;
-    left: -5%;
+    left: 50%;
+    margin-left: -70px;
     color: black;
 }
 

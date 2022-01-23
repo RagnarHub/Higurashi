@@ -25,7 +25,7 @@ function check_time() {
 }
 
 function startpage_render() {
-    set_data(2, 'Юзер');
+    set_data(7, 'Юзер');
     workarea_render();
 }
 
