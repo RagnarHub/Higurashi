@@ -20,37 +20,37 @@
     background-image: url('images/bg/workarea_day.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity : 0.95;
+    opacity: 0.95;
 }
 
 .workarea-sunset {
     background-image: url('images/bg/workarea_sunset.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity : 0.95;
+    opacity: 0.95;
 }
 
 .workarea-night {
     background-image: url('images/bg/workarea_night.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity : 0.95;
+    opacity: 0.95;
 }
 
 .workarea-day {
     background-image: url('images/bg/workarea_day.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity : 0.95;
+    opacity: 0.95;
 }
 
 img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    -moz-user-select: none; 
-    -webkit-user-select: none; 
-    -ms-user-select: none; 
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
 
@@ -111,33 +111,34 @@ img {
     position: relative;
 }
 
-.cleft-player, .cright-player {
+.cleft-player,
+.cright-player {
     top: 15%;
 }
 
 .ltop-info {
     top: 5%;
-    right: 20%;   
+    right: 20%;
 }
 
 .rtop-info {
     top: 5%;
-    left: 20%;   
+    left: 20%;
 }
 
 .ctop-info {
     top: 5%;
-    left: 20%;   
+    left: 20%;
 }
 
 .left-info {
     top: 30%;
-    left: 5%;   
+    left: 5%;
 }
 
 .right-info {
     top: 30%;
-    right: 5%;   
+    right: 5%;
 }
 
 .player-info-container-top {
@@ -159,11 +160,12 @@ img {
 }
 
 .img-ltop {
-    float:right;
+    float: right;
 }
 
-.img-rtop, .img-ctop {
-    float:left;
+.img-rtop,
+.img-ctop {
+    float: left;
 }
 
 .player-info-container-side {
@@ -232,7 +234,7 @@ img {
     font-size: 110%;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     text-align: center;
-    background-color:blanchedalmond;
+    background-color: blanchedalmond;
     border-radius: 5px;
     margin-bottom: 5px;
     user-select: none;
@@ -253,7 +255,7 @@ img {
     font-size: 110%;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     text-align: center;
-    background-color:blanchedalmond;
+    background-color: blanchedalmond;
     border-radius: 5px;
     user-select: none;
 }
@@ -398,8 +400,8 @@ img {
     position: absolute;
     top: calc(30px - 1.5vw);
     left: calc(-40px - 2vw);
-    writing-mode: vertical-lr; 
-    text-orientation: upright; 
+    writing-mode: vertical-lr;
+    text-orientation: upright;
     color: blue;
     font-size: 130%;
     letter-spacing: -0.5em;
@@ -497,7 +499,7 @@ img {
 
 .player-speach {
     position: absolute;
-    background-color:blanchedalmond;
+    background-color: blanchedalmond;
     border: 2px solid rgb(73, 63, 47);
     border-radius: 10px;
     text-align: center;
@@ -544,10 +546,10 @@ img {
     top: 90%;
     left: 40%;
     width: 0;
-	height: 0;
-	border-left: 5px solid transparent;
-	border-right: 5px solid transparent;
-	border-bottom: 50px solid rgb(243, 231, 214);
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 50px solid rgb(243, 231, 214);
     transform: skew(0deg);
     z-index: 19;
 }
@@ -557,10 +559,10 @@ img {
     top: -40%;
     left: 112%;
     width: 0;
-	height: 0;
-	border-left: -20px solid transparent;
-	border-right: 20px solid transparent;
-	border-top: 50px solid rgb(243, 231, 214);
+    height: 0;
+    border-left: -20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 50px solid rgb(243, 231, 214);
     transform: skew(-35deg);
     z-index: 19;
 }
@@ -570,10 +572,10 @@ img {
     top: -40%;
     right: 112%;
     width: 0;
-	height: 0;
-	border-left: 20px solid transparent;
-	border-right: -20px solid transparent;
-	border-top: 50px solid rgb(243, 231, 214);
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: -20px solid transparent;
+    border-top: 50px solid rgb(243, 231, 214);
     transform: skew(35deg);
     z-index: 19;
 }
@@ -583,33 +585,89 @@ img {
     top: -110%;
     left: 40%;
     width: 0;
-	height: 0;
-	border-left: 5px solid transparent;
-	border-right: 5px solid transparent;
-	border-top: 80px solid rgb(243, 231, 214);
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 80px solid rgb(243, 231, 214);
     transform: skew(0deg);
     z-index: 9;
 }
 
 #layer {
-    display: none; /* none block */
+    display: none;
+    /* none block */
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
     left: 0;
-    background: rgba(0, 0, 0, .3);
+    background: rgba(0, 0, 0, 0.3);
     text-align: center;
     z-index: 30;
-  }
-   
+}
+
 #layer::before {
     content: '';
     display: inline-block;
     height: 100%;
     vertical-align: middle;
 }
-   
+
+#modal-rules {
+    display: inline-block;
+    width: 80%;
+    height: 80%;
+    margin-bottom: 10vh;
+    min-width: 450px;
+    min-height: 330px;
+    padding: 10px;
+    background: rgba(238, 238, 238, 0.952);
+    border-radius: 5px;
+    box-shadow: 0 0 3px 5px rgba(0, 0, 0, 0.3);
+    vertical-align: middle;
+    position: relative;
+}
+
+#modal-rules-top {
+    width: 100%;
+    height: 5%;
+    color: red;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-weight: bold;
+    font-size: 150%;
+    text-align: center;
+    margin-top: 1%;
+    margin-bottom: auto;
+    user-select: none;
+}
+
+#modal-rules-center {
+    width: 90%;
+    height: 70%;
+    color: blue;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 110%;
+    text-align: left;
+    margin-top: 0;
+    margin-bottom: auto;
+    margin-left: 5%;
+    user-select: none;
+    overflow: auto
+}
+
+#modal-rules-bottom {
+    width: 100%;
+    height: 12%;
+    color: blue;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 130%;
+    text-align: center;
+    margin-bottom: auto;
+    user-select: none;
+    position: absolute;
+    bottom: 3%;
+}
+
 #modal {
     display: inline-block;
     width: 50%;
@@ -620,7 +678,7 @@ img {
     padding: 10px;
     background: rgba(238, 238, 238, 0.952);
     border-radius: 5px;
-    box-shadow: 0 0 3px 5px rgba(0, 0, 0, .3);
+    box-shadow: 0 0 3px 5px rgba(0, 0, 0, 0.3);
     vertical-align: middle;
 }
 
@@ -659,14 +717,18 @@ img {
     user-select: none;
 }
 
-#modal-center-person, #modal-center-weapon, #modal-center-location {
+#modal-center-person,
+#modal-center-weapon,
+#modal-center-location {
     position: relative;
     text-align: left;
     height: 30%;
 }
 
-#person-selector-desc-container, #weapon-selector-desc-container, #location-selector-desc-container {
-    float:left;
+#person-selector-desc-container,
+#weapon-selector-desc-container,
+#location-selector-desc-container {
+    float: left;
     height: 100%;
     width: 23%;
     display: flex;
@@ -700,7 +762,9 @@ img {
     margin-left: 10%;
 }
 
-#person-selector-container, #weapon-selector-container, #location-selector-container {
+#person-selector-container,
+#weapon-selector-container,
+#location-selector-container {
     height: 100%;
     width: 40%;
     display: flex;
@@ -714,7 +778,7 @@ img {
     border-radius: 10px;
     font-size: 90%;
     user-select: none;
-    outline:0px;
+    outline: 0px;
 }
 
 #weapon-selector {
@@ -726,7 +790,7 @@ img {
     border-radius: 10px;
     font-size: 90%;
     user-select: none;
-    outline:0px;
+    outline: 0px;
 }
 
 #location-selector {
@@ -738,7 +802,14 @@ img {
     border-radius: 10px;
     font-size: 90%;
     user-select: none;
-    outline:0px;
+    outline: 0px;
+}
+
+.modal-center-control {
+    width: 25%;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .modal-left-control {
@@ -790,3 +861,13 @@ img {
     background-image: url('images/buttons/blue_button_hover.png');
 }
 
+#rules-close-button {
+    border: 0px;
+    color: rgb(236, 243, 177);
+    background-image: url('images/buttons/blue_button.png');
+}
+
+#rules-close-button:hover {
+    color: rgb(248, 235, 195);
+    background-image: url('images/buttons/blue_button_hover.png');
+}

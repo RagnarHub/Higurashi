@@ -264,6 +264,62 @@ function forced_render(storage_data) {
     }
 }
 
+function show_rules() {
+    let workarea = document.querySelector('#workarea');
+    workarea.style.opacity = "1.0";
+
+    let layer = document.querySelector('#layer');
+    layer.style.display = 'block';
+    let modal = document.createElement('div');
+    modal.id = "modal-rules";
+
+    let modal_top = document.createElement('div');
+    modal_top.id = "modal-rules-top";
+    modal_top.innerHTML = "Правила игры";
+    modal.append(modal_top);
+
+    let modal_center = document.createElement('div');
+    modal_center.id = "modal-rules-center";
+    modal_center.innerHTML = "Добро пожаловать в наш клуб! Сегодня сыграем в детективную игру. Произошло убийство, и тебе нужно быстрее других распутать это дело. " +
+        "Преступник находится среди сидящих в этой комнате. Тебе необходимо отгадать преступника, орудие и место преступления.<br>" +
+        "В специальной колоде содержатся карты для всех присутствующих в этой комнате, различных орудий и локаций. Перед игрой они перемешиваются, " +
+        "и из колоды откладывается по одной карте для человека, оружия и места, эти 3 карты и будут являться правильным ответом. " +
+        "Остальные карты поровну раздаются между участниками. В итоге игроку необходимо отгадать те 3 карты, которых ни у кого на руках нет. " +
+        "В свой ход игрок может высказать предположение, либо огласить ответ. В случае предположения он называет человека/орудие/место, " +
+        "и остальные участники сверяют догадку со своими картами. Если у кого-то из них на руках есть хотя бы одна из этих карт, он должен об этом сообщить. " +
+        "После этого ход передается по часовой стрелке к следующему игроку. В случае ответа, участник называет комбинацию, которая, по его мнению, наверняка является правильной. " +
+        "В этом случае раунд сразу завершается и выскрываются отложенные в начале карты с правильным ответом. Если игрок верно отгадал его, он получает 1 балл на счет, " +
+        "если не отгадал - 1 балл у него забирается. После этого начинается следующий раунд. Игра идет, пока кто-либо из участников не наберет установленное для победы количество баллов. " +
+        "При нажатии конпки \"Догадка\" можно высказать предположение или дать ответ. При нажатии конпки \"Рестарт\" игра будет перезапущена.<br>" +
+        "Ну вот и все. Вперед и в бой же!";
+    modal.append(modal_center);
+
+    let modal_bottom = document.createElement('div');
+    modal_bottom.id = "modal-rules-bottom";
+    modal.append(modal_bottom);
+
+    let modal_center_controls = document.createElement('div');
+    modal_center_controls.className = "modal-center-control";
+    modal_bottom.append(modal_center_controls);
+
+    let rules_close_button = document.createElement('button');
+    rules_close_button.id = "rules-close-button";
+    rules_close_button.className = "modal-button";
+    rules_close_button.textContent = "Понятно!";
+    rules_close_button.onclick = rules_close_button_click;
+    modal_center_controls.append(rules_close_button);
+
+    layer.append(modal);
+}
+
+function rules_close_button_click() {
+    let layer = document.querySelector('#layer');
+    layer.style.display = 'none';
+    while (layer.firstChild) {
+        layer.removeChild(layer.firstChild);
+    }
+}
+
 function restart_button_click() {
     check_time();
     localStorage.clear();
