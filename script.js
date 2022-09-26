@@ -25,8 +25,106 @@ function check_time() {
 }
 
 function startpage_render() {
-    set_data(7, 'Юзер');
+    let workarea = document.querySelector('#workarea');
+    workarea.style.opacity = "1.0";
+
+    let layer = document.querySelector('#layer');
+    layer.style.display = 'block';
+    let modal = document.createElement('div');
+    modal.id = "modal-settings";
+
+    let modal_top = document.createElement('div');
+    modal_top.id = "modal-settings-top";
+    modal_top.innerHTML = "Настройки игры";
+    modal.append(modal_top);
+
+
+    let modal_center = document.createElement('div');
+    modal_center.id = "modal-settings-center";
+    modal.append(modal_center);
+
+
+    let modal_center_players = document.createElement('div');
+    modal_center_players.id = "modal-center-players";
+    modal_center.append(modal_center_players);
+
+    let players_selector_desc_container = document.createElement('div');
+    players_selector_desc_container.id = "players-selector-desc-container";
+    modal_center_players.append(players_selector_desc_container);
+
+    let players_selector_desc = document.createElement('div');
+    players_selector_desc.id = "players-selector-desc";
+    players_selector_desc.innerHTML = 'Количество игроков';
+    players_selector_desc_container.append(players_selector_desc);
+
+
+    let players_selector_container = document.createElement('div');
+    players_selector_container.id = "players-selector-container";
+    modal_center_players.append(players_selector_container);
+
+    let players_selector = document.createElement('select');
+    players_selector.id = "players-selector";
+    players_selector_container.append(players_selector);
+
+    let first_id = null;
+    for (let i = 2; i <= 7; i++) {
+        let i_text = '';
+        if (i == 1) {
+            i_text = i + ' игрок';
+        } else if (i >= 2 && i <= 4) {
+            i_text = i + ' игрока';
+        } else {
+            i_text = i + ' игроков';
+        }
+        let players_option = document.createElement('option');
+        players_option.value = i;
+        players_option.className = "players-selector";
+        players_option.innerHTML = i_text;
+        if (i == 7) {
+            players_option.selected = "selected";
+        }
+        players_selector.append(players_option);
+    }
+    players_selector.className = "players-selector";
+
+
+
+
+
+    let modal_bottom = document.createElement('div');
+    modal_bottom.id = "modal-settings-bottom";
+    modal.append(modal_bottom);
+
+    let modal_center_controls = document.createElement('div');
+    modal_center_controls.className = "modal-settings-control";
+    modal_bottom.append(modal_center_controls);
+
+    let settings_apply_button = document.createElement('button');
+    settings_apply_button.id = "settings-apply-button";
+    settings_apply_button.className = "settings-button";
+    settings_apply_button.textContent = "Начать!";
+    settings_apply_button.onclick = settings_apply_button_click;
+    modal_center_controls.append(settings_apply_button);
+
+
+
+
+    layer.append(modal);
+}
+
+function settings_apply_button_click() {
+    let player_selector = document.querySelector('#players-selector');
+    let players = player_selector.value;
+
+    let layer = document.querySelector('#layer');
+    layer.style.display = 'none';
+    while (layer.firstChild) {
+        layer.removeChild(layer.firstChild);
+    }
+
+    set_data(players, 'Юзер');
     workarea_render();
+    show_rules();
 }
 
 function workarea_render() {
@@ -243,6 +341,11 @@ function workarea_render() {
 
         }
     }
+    let button_rules = document.createElement('div');
+    button_rules.className = "button-rules";
+    button_rules.innerHTML = '?';
+    button_rules.onclick = show_rules;
+    document.querySelector('#workarea').append(button_rules);
 }
 
 function forced_render(storage_data) {
@@ -327,6 +430,7 @@ function restart_button_click() {
     document.querySelector('#left-container-area').innerHTML = null;
     document.querySelector('#right-container-area').innerHTML = null;
     document.querySelector('#bottom-container-area').innerHTML = null;
+    document.querySelector('.button-rules').remove();
     let workarea = document.querySelector('#workarea');
     let answer_cards = document.querySelectorAll('.answer-card');
     for (let i = 0; i < answer_cards.length; i++) {
