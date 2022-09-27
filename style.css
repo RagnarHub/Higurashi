@@ -951,7 +951,8 @@ img {
 
 #modal-center-players,
 #modal-center-name,
-#modal-center-maxscore {
+#modal-center-maxscore,
+#modal-center-punishment {
     position: relative;
     text-align: left;
     height: 23%;
@@ -959,10 +960,21 @@ img {
 
 #players-selector-desc-container,
 #name-selector-desc-container,
-#maxscore-selector-desc-container {
+#maxscore-selector-desc-container,
+#punishment-selector-desc-container {
     float: left;
     height: 100%;
     width: 35%;
+    display: flex;
+    flex-direction: column;
+}
+
+#players-selector-container,
+#name-selector-container,
+#maxscore-selector-container,
+#punishment-selector-container {
+    height: 100%;
+    width: 50%;
     display: flex;
     flex-direction: column;
 }
@@ -974,15 +986,6 @@ img {
     margin-top: auto;
     margin-bottom: auto;
     margin-left: 10%;
-}
-
-#players-selector-container,
-#name-selector-container,
-#maxscore-selector-container {
-    height: 100%;
-    width: 40%;
-    display: flex;
-    flex-direction: column;
 }
 
 #players-selector {
@@ -997,3 +1000,110 @@ img {
     color: blue;
     border: 2px solid blue;
 }
+
+#maxscore-selector-desc {
+    color: red;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 1.7vw;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: 10%;
+}
+
+#maxscore-selector {
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 27px;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    border-radius: 7px;
+    font-size: 90%;
+    user-select: none;
+    outline: 0px;
+    color: blue;
+    border: 2px solid blue;
+}
+
+#name-selector-desc {
+    color: red;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 1.7vw;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: 10%;
+}
+
+#name-selector {
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 22px;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    border-radius: 7px;
+    font-size: 90%;
+    user-select: none;
+    outline: 0px;
+    color: blue;
+    border: 2px solid blue;
+}
+
+#punishment-selector-desc {
+    color: red;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 1.7vw;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: 10%;
+}
+
+#punishment-selector {
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 60px;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    border-radius: 7px;
+    font-size: 90%;
+    user-select: none;
+    outline: 0px;
+    color: blue;
+    border: 2px solid blue;
+    resize: none;
+}
+
+@media (max-width: 700px) {
+    #players-selector-desc, #maxscore-selector-desc, #name-selector-desc, #punishment-selector-desc {
+        font-size: 12px;
+    }
+    #person-selector-desc, #weapon-selector-desc, #location-selector-desc {
+        font-size: 11px;
+    }
+}
+
+#settings-apply-button {
+    border: 0px;
+    color: rgb(236, 243, 177);
+    background-image: url('images/buttons/blue_button.png');
+}
+
+#settings-apply-button:hover {
+    color: rgb(248, 235, 195);
+    background-image: url('images/buttons/blue_button_hover.png');
+}
+
+.informer-maxscore {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 30px;
+    width: 75px;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #f18b1e;
+    color: #fff;
+    border-radius: 5px;
+    text-align: center;
+    vertical-align: middle;
+    padding-top: 4px;
+    padding-bottom: 1px;
+    user-select: none;
+    line-height: 1;
+}
+

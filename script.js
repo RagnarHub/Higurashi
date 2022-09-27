@@ -66,7 +66,6 @@ function startpage_render() {
     players_selector.id = "players-selector";
     players_selector_container.append(players_selector);
 
-    let first_id = null;
     for (let i = 2; i <= 7; i++) {
         let i_text = '';
         if (i == 1) {
@@ -88,7 +87,96 @@ function startpage_render() {
     players_selector.className = "players-selector";
 
 
+    let modal_center_maxscore = document.createElement('div');
+    modal_center_maxscore.id = "modal-center-maxscore";
+    modal_center.append(modal_center_maxscore);
 
+    let maxscore_selector_desc_container = document.createElement('div');
+    maxscore_selector_desc_container.id = "maxscore-selector-desc-container";
+    modal_center_maxscore.append(maxscore_selector_desc_container);
+
+    let maxscore_selector_desc = document.createElement('div');
+    maxscore_selector_desc.id = "maxscore-selector-desc";
+    maxscore_selector_desc.innerHTML = 'Счет для победы';
+    maxscore_selector_desc_container.append(maxscore_selector_desc);
+
+
+    let maxscore_selector_container = document.createElement('div');
+    maxscore_selector_container.id = "maxscore-selector-container";
+    modal_center_maxscore.append(maxscore_selector_container);
+
+    let maxscore_selector = document.createElement('select');
+    maxscore_selector.id = "maxscore-selector";
+    maxscore_selector_container.append(maxscore_selector);
+
+    let maxscores = [3, 5, 7, 10, 15, 20, 25, 50];
+    for (let score of maxscores) {
+        let score_text = '';
+        if (score == 3) {
+            score_text = score + ' очка';
+        } else {
+            score_text = score + ' очков';
+        }
+        let maxscore_option = document.createElement('option');
+        maxscore_option.value = score;
+        maxscore_option.className = "maxscore-selector";
+        maxscore_option.innerHTML = score_text;
+        if (score == 5) {
+            maxscore_option.selected = "selected";
+        }
+        maxscore_selector.append(maxscore_option);
+    }
+    maxscore_selector.className = "maxscore-selector";
+
+
+    let modal_center_name = document.createElement('div');
+    modal_center_name.id = "modal-center-name";
+    modal_center.append(modal_center_name);
+
+    let name_selector_desc_container = document.createElement('div');
+    name_selector_desc_container.id = "name-selector-desc-container";
+    modal_center_name.append(name_selector_desc_container);
+
+    let name_selector_desc = document.createElement('div');
+    name_selector_desc.id = "name-selector-desc";
+    name_selector_desc.innerHTML = 'Имя игрока';
+    name_selector_desc_container.append(name_selector_desc);
+
+
+    let name_selector_container = document.createElement('div');
+    name_selector_container.id = "name-selector-container";
+    modal_center_name.append(name_selector_container);
+
+    let name_selector = document.createElement('input');
+    name_selector.id = "name-selector";
+    name_selector.value = "Новенький";
+    name_selector.maxLength = 10;
+    name_selector_container.append(name_selector);
+
+
+    let modal_center_punishment = document.createElement('div');
+    modal_center_punishment.id = "modal-center-punishment";
+    modal_center.append(modal_center_punishment);
+
+    let punishment_selector_desc_container = document.createElement('div');
+    punishment_selector_desc_container.id = "punishment-selector-desc-container";
+    modal_center_punishment.append(punishment_selector_desc_container);
+
+    let punishment_selector_desc = document.createElement('div');
+    punishment_selector_desc.id = "punishment-selector-desc";
+    punishment_selector_desc.innerHTML = 'Наказание для проигравшего';
+    punishment_selector_desc_container.append(punishment_selector_desc);
+
+
+    let punishment_selector_container = document.createElement('div');
+    punishment_selector_container.id = "punishment-selector-container";
+    modal_center_punishment.append(punishment_selector_container);
+
+    let punishment_selector = document.createElement('textarea');
+    punishment_selector.id = "punishment-selector";
+    punishment_selector.value = "Отдать свой обед победителю";
+    punishment_selector.maxLength = 120;
+    punishment_selector_container.append(punishment_selector);
 
 
     let modal_bottom = document.createElement('div');
@@ -96,18 +184,15 @@ function startpage_render() {
     modal.append(modal_bottom);
 
     let modal_center_controls = document.createElement('div');
-    modal_center_controls.className = "modal-settings-control";
+    modal_center_controls.className = "modal-center-control";
     modal_bottom.append(modal_center_controls);
 
     let settings_apply_button = document.createElement('button');
     settings_apply_button.id = "settings-apply-button";
-    settings_apply_button.className = "settings-button";
+    settings_apply_button.className = "modal-button";
     settings_apply_button.textContent = "Начать!";
     settings_apply_button.onclick = settings_apply_button_click;
     modal_center_controls.append(settings_apply_button);
-
-
-
 
     layer.append(modal);
 }
@@ -115,6 +200,18 @@ function startpage_render() {
 function settings_apply_button_click() {
     let player_selector = document.querySelector('#players-selector');
     let players = player_selector.value;
+    let maxscore_selector = document.querySelector('#maxscore-selector');
+    let maxscore = maxscore_selector.value;
+    let name_selector = document.querySelector('#name-selector');
+    let name = name_selector.value;
+    let punishment_selector = document.querySelector('#punishment-selector');
+    let punishment = punishment_selector.value;
+    if (!name) {
+        name = 'Новенький';
+    }
+    if (!punishment) {
+        punishment = 'Ничего не делать';
+    }
 
     let layer = document.querySelector('#layer');
     layer.style.display = 'none';
@@ -122,7 +219,7 @@ function settings_apply_button_click() {
         layer.removeChild(layer.firstChild);
     }
 
-    set_data(players, 'Юзер');
+    set_data(players, name, maxscore, punishment);
     workarea_render();
     show_rules();
 }
@@ -341,11 +438,17 @@ function workarea_render() {
 
         }
     }
+
     let button_rules = document.createElement('div');
     button_rules.className = "button-rules";
     button_rules.innerHTML = '?';
     button_rules.onclick = show_rules;
     document.querySelector('#workarea').append(button_rules);
+
+    let maxscore = document.createElement('div');
+    maxscore.className = "informer-maxscore";
+    maxscore.innerHTML = 'Счет для победы: ' + data.maxscore;
+    document.querySelector('#workarea').append(maxscore);
 }
 
 function forced_render(storage_data) {
@@ -431,6 +534,7 @@ function restart_button_click() {
     document.querySelector('#right-container-area').innerHTML = null;
     document.querySelector('#bottom-container-area').innerHTML = null;
     document.querySelector('.button-rules').remove();
+    document.querySelector('.informer-maxscore').remove();
     let workarea = document.querySelector('#workarea');
     let answer_cards = document.querySelectorAll('.answer-card');
     for (let i = 0; i < answer_cards.length; i++) {
@@ -1748,7 +1852,7 @@ function next_round(data) {
 
 
 
-function set_data(players_amount, user_name) {
+function set_data(players_amount, user_name, maxscore, punishment) {
     let bots_info = {
         "ri": { "name": "Рика", "border": "ri-border" },
         "ha": { "name": "Ханю", "border": "ha-border" },
@@ -1872,6 +1976,8 @@ function set_data(players_amount, user_name) {
         "players_amount": players_amount,
         "bots": bots,
         "user_name": user_name,
+        "maxscore": maxscore,
+        "punishment": punishment,
         "order": order,
         "players_data": players_data,
         "cards_info": cards_info,
