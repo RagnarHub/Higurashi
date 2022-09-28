@@ -603,7 +603,7 @@ img {
     left: 0;
     background: rgba(0, 0, 0, 0.3);
     text-align: center;
-    z-index: 30;
+    z-index: 60;
 }
 
 #layer::before {

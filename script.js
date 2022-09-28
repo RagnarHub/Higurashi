@@ -853,7 +853,7 @@ function assumption_calc(data) {
     let position = data.phase.position;
     let active_player = data.phase.active_player;
     let corr_factor = get_corr_factor(data.history, active_player, selected);
-    console.log(data);
+    //console.log(data);
 
     let reaction_amount = data.phase.reaction.length;
     for (let player_id in data.players_data) {
@@ -911,8 +911,8 @@ function assumption_calc(data) {
         }
         //ответили по количеству неизвестных (с учетом заведомо правильных карт в вопросе)
         else if (reaction_amount == (self_unknown - true_cards_in_selected.length)) {
-            console.log('new root');
-            console.log(true_cards_in_selected);
+            //console.log('new root');
+            //console.log(true_cards_in_selected);
             for (let selected_card of selected) {
                 if (!in_array(selected_card, player_data.cards) && !in_array(selected_card, true_cards_in_selected)) {
                     player_data['calc_list'][selected_card]['rate'] = -10000; //исключаем все из запроса
@@ -1008,16 +1008,16 @@ function assumption_calc(data) {
             }
             //let known_array_noplayer = [].concat([cards_weapon['true']], [cards_location['true']], cards_weapon['false'], cards_location['false']);
             let probably_true_cards = [];
-            console.log(known_array);
+            //console.log(known_array);
             for (let selected_card of selected) {
                 if (!in_array(selected_card, known_array)) {
                     probably_true_cards.push(selected_card);
                 }
             }
-            console.log(probably_true_cards);
+            //console.log(probably_true_cards);
             if (probably_true_cards.length < 3) {
                 for (let probably_true_card of probably_true_cards) {
-                    console.log(probably_true_card + ' add 30 extra rate');
+                    //console.log(probably_true_card + ' add 30 extra rate');
                     player_data['calc_list'][probably_true_card]['rate'] = player_data['calc_list'][probably_true_card]['rate'] + add_extra_rate;
                 }
             }
@@ -1044,8 +1044,8 @@ function next_action_prepare(data, repeat_action = false, new_round = false) {
     for (player_id in data.players_data) {
         let player = data.players_data[player_id];
         if (player.pos == data.phase.position) {
-            data.phase.active_player = player.id;
-            next_player_type = player.type;
+            data.phase.active_player = player_id;
+            next_player_type = data.players_data[player_id].type;
         }
     }
     data.phase.reaction = [];
@@ -1660,7 +1660,7 @@ function answer_button_click(forced_render = false, bot_action = false) {
     let selected = [];
 
     if (forced_render === true || bot_action === true) {
-        selected = data.phase.assumption;
+        selected = [data.phase.assumption[1], data.phase.assumption[2], data.phase.assumption[0]];
     } else {
         let player_selector = document.querySelector('#person-selector');
         let weapon_selector = document.querySelector('#weapon-selector');
@@ -1689,6 +1689,7 @@ function answer_button_click(forced_render = false, bot_action = false) {
         data.phase.point = "bot_answer";
     }
 
+    let answered_by = data.phase.active_player;
     let first_delay = 2000;
     if (bot_action !== true) {
         let player = data.phase.active_player;
@@ -1775,7 +1776,7 @@ function answer_button_click(forced_render = false, bot_action = false) {
             if (i == data.players_amount - 1) {
                 unblock = true;
             }
-            answer_react(data, order_now, answer_result, delay, unblock);
+            answer_react(data, order_now, answer_result, delay, unblock, answered_by);
         }
         update_data(data);
         if (is_player_next(data, order[1]) == true) {
@@ -1784,7 +1785,7 @@ function answer_button_click(forced_render = false, bot_action = false) {
     }, first_delay);
 }
 
-function answer_react(data, order_now, answer_result, delay, unblock) {
+function answer_react(data, order_now, answer_result, delay, unblock, answered_by) {
     let player_id = null;
     let player = null;
     for (id in data.players_data) {
@@ -1795,11 +1796,53 @@ function answer_react(data, order_now, answer_result, delay, unblock) {
     }
 
     let text = '';
+    let girl = false;
+    if (in_array(answered_by, ['ri', 'ha', 'mi', 'si', 're', 'sa'])) {
+        girl = true;
+    }
+    answered_by = data.players_data[answered_by].name;
     if (answer_result) {
         text = 'Тебе просто повезло!';
+        let random = Math.floor(Math.random() * 5)
+        if (player.id == 'ri') {
+            if (random == 0) {
+                text = 'Миии... С нами с легкостью разделались же!';
+            } else if (random == 1) {
+                text = 'У тебя совсем не плохо получается';
+            } else if (random == 2) {
+                text = answered_by + ' очень хорошо постарался же!';
+                if (girl) text = answered_by + ' очень хорошо постаралась же!';
+            } else if (random == 3) {
+                text = answered_by + ' совсем нас не жалеет';
+            } else if (random >= 4) {
+                text = 'Миии... Снова нас обыграли же...';
+            }
+        } else if (player.id = 'ha') {
+
+        }
     } else {
         text = 'Отчаянная, но безуспешная попытка';
+        let random = Math.floor(Math.random() * 5)
+        if (player.id == 'ri') {
+            if (random == 0) {
+                text = 'Вперед и в бой же!';
+            } else if (random == 1) {
+                text = 'Бедненький, бедненький, совсем не умеет играть же...';
+                if (girl) text = 'Бедненькая, бедненькая, совсем не умеет играть же...';
+            } else if (random == 2) {
+                text = 'Миии... ' + answered_by + ' переоценил свои силы';
+                if (girl) text = 'Миии... ' + answered_by + ' переоценила свои силы';
+            } else if (random == 3) {
+                text = answered_by + ' совсем глупенький же';
+                if (girl) text = answered_by + ' совсем глупенькая же';
+            } else if (random >= 4) {
+                text = 'Нипаааа~☆ Не стоило переживать';
+            }
+        } else if (player.id = 'ha') {
+
+        }
     }
+
     setTimeout(() => {
         player_speach_show(order_now, player.side, text);
         if (unblock == true) {
