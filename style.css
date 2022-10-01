@@ -506,7 +506,7 @@ img {
     padding: 3px 10px;
     font-size: 90%;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    z-index: 20;
+    z-index: 60;
     user-select: none;
 }
 

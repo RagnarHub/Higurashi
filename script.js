@@ -1817,8 +1817,77 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
             } else if (random >= 4) {
                 text = 'Миии... Снова нас обыграли же...';
             }
-        } else if (player.id = 'ha') {
-
+        } else if (player.id == 'ha') {
+            if (random == 0) {
+                text = 'Ау-ау-ау... Опять обыграли...';
+            } else if (random == 1) {
+                text = 'Ты хорошо постарался!';
+                if (girl) text = 'Ты хорошо постаралась!';
+            } else if (random == 2) {
+                text = answered_by + ' совсем не оставил мне шансов';
+                if (girl) text = answered_by + ' совсем не оставила мне шансов';
+            } else if (random == 3) {
+                text = answered_by + ' протсо уничтожил нас.. Ау...';
+                if (girl) text = answered_by + ' протсо уничтожила нас.. Ау...';
+            } else if (random >= 4) {
+                text = 'Ау... ' + answered_by + 'слишком хорошо играет';
+            }
+        } else if (player.id == 're') {
+            if (random == 0) {
+                text = 'Хаууу! ' + answered_by + ' так здорово играет!';
+            } else if (random == 1) {
+                text = 'Хаууу! Как ты так смог, так смог?';
+                if (girl) text = 'Хаууу! Как ты так смогла, смогла?';
+            } else if (random == 2) {
+                text = answered_by + ' такой умелый! Хочу забрать домой!';
+                if (girl) text = answered_by + ' такая умелая! Хочу забрать домой!';
+            } else if (random == 3) {
+                text = 'Рэна так и не успела угадать, угадать...';
+            } else if (random >= 4) {
+                text = 'Ну и что Рэна теперь будет делать, делать...';
+            }
+        } else if (player.id == 'sa') {
+            if (random == 0) {
+                text = 'О-хо-хо! ' + answered_by + ', похоже, решил всех победить!';
+                if (girl) text = 'О-хо-хо! ' + answered_by + ', похоже, решила всех победить!';
+            } else if (random == 1) {
+                text = 'И как я могу тягаться с такими профессионалами...';
+            } else if (random == 2) {
+                text = answered_by + ', вы решили совсем нас не щадить?';
+            } else if (random == 3) {
+                text = 'О-хо-хо! А претворялись таким неумелым';
+                if (girl) text = 'О-хо-хо! А претворялись такой неумелой';
+            } else if (random >= 4) {
+                text = 'Думаете, этого будет достаточно вам для победы? Как бы не так!';
+            }
+        } else if (player.id == 'mi') {
+            if (random == 0) {
+                text = 'А ' + answered_by + ' в этот раз неплохо себя показал';
+                if (girl) text = 'А ' + answered_by + ' в этот раз неплохо себя показала';
+            } else if (random == 1) {
+                text = 'Тебе все равно не избежать наказания!';
+            } else if (random == 2) {
+                text = answered_by + ', а ты растешь на глазах...';
+            } else if (random == 3) {
+                text = 'Меньшего от члена клуба и не ожидалось!';
+            } else if (random >= 4) {
+                text = 'Эй, эй! Я тоже собиралась ответить!';
+            }
+        } else if (player.id == 'si') {
+            if (random == 0) {
+                text = 'Не думала, что ' + answered_by + ' способен на такое';
+                if (girl) text = 'Не думала, что ' + answered_by + ' способна на такое';
+            } else if (random == 1) {
+                text = 'Наверняка сговорился с кем-то';
+                if (girl) text = 'Наверняка сговорилась с кем-то';
+            } else if (random == 2) {
+                text = 'Хех, ' + answered_by + ' решил бросить мне вызов...';
+                if (girl) text = 'Хех, ' + answered_by + ' решила бросить мне вызов...';
+            } else if (random == 3) {
+                text = 'Кто-то настолько испугался моего наказания?';
+            } else if (random >= 4) {
+                text = 'Не думай, что такой мелочи будет достаточно для победы';
+            }
         }
     } else {
         text = 'Отчаянная, но безуспешная попытка';
@@ -1838,8 +1907,79 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
             } else if (random >= 4) {
                 text = 'Нипаааа~☆ Не стоило переживать';
             }
-        } else if (player.id = 'ha') {
-
+        } else if (player.id == 'ha') {
+            if (random == 0) {
+                text = 'Ау-ау! Не стоило из-за тебя волноваться';
+            } else if (random == 1) {
+                text = 'Не переживай, в следующий раз все получится!';
+            } else if (random == 2) {
+                text = 'Ау-ау-ау... ' + answered_by + ' напрасно не проверил все еще раз';
+                if (girl) text = 'Ау-ау-ау... ' + answered_by + ' напрасно не проверила все еще раз';
+            } else if (random == 3) {
+                text = answered_by + ' все равно хорошо постарался!';
+                if (girl) text = answered_by + ' все равно хорошо постаралась!';
+            } else if (random >= 4) {
+                text = 'Ау... Зачем ты так спешил?';
+                if (girl) text = 'Ау... Зачем ты так спешила?';
+            }
+        } else if (player.id == 're') {
+            if (random == 0) {
+                text = 'Хаууу... Ты был близко...';
+                if (girl) text = 'Хауу... Ты была близко...';
+            } else if (random == 1) {
+                text = 'И зачем было так рисовать, рисковать?';
+            } else if (random == 2) {
+                text = 'Хаууу! ' + answered_by + ' такой расстроенный, хочу забрать домой!';
+                if (girl) text = 'Хаууу! ' + answered_by + ' такой расстроенная, хочу забрать домой!';
+            } else if (random == 3) {
+                text = answered_by + ' облегчил Рэне победу';
+                if (girl) text = answered_by + ' облегчила Рэне победу';
+            } else if (random >= 4) {
+                text = 'Ты совсем не думая сказал, сказал?';
+                if (girl) text = 'Ты совсем не думая сказала, сказала?';
+            }
+        } else if (player.id == 'sa') {
+            if (random == 0) {
+                text = 'О-хо-хо! Вы решили облегчить мне победу?';
+            } else if (random == 1) {
+                text = 'Уф, не стоило из-за вас даже переживать';
+            } else if (random == 2) {
+                text = 'О-хо-хо! ' + answered_by + ' явно хочет получить наказание!';
+            } else if (random == 3) {
+                text = answered_by + ' слишком бесстрашный';
+                if (girl) text = answered_by + ' слишком бесстрашная';
+            } else if (random >= 4) {
+                text = 'А вы, похоже, совсем не боитесь рисковать?';
+            }
+        } else if (player.id == 'mi') {
+            if (random == 0) {
+                text = 'Эхехе, кто-то собственноручно движется к наказанию!';
+            } else if (random == 1) {
+                text = 'Вот это смелость, достойная члена нашего клуба!';
+            } else if (random == 2) {
+                text = answered_by + '...ты правда собираешься побеждать?';
+            } else if (random == 3) {
+                text = answered_by + ' что-то явно перепутал';
+                if (girl) text = answered_by + ' что-то явно перепутала';
+            } else if (random >= 4) {
+                text = 'А я знала правильный ответ! Он не дал ответить мне! Нечестно!';
+                if (girl) text = 'А я знала правильный ответ! Она не дала ответить мне! Нечестно!';
+            }
+        } else if (player.id == 'si') {
+            if (random == 0) {
+                text = 'А это было дерзко!';
+            } else if (random == 1) {
+                text = 'Да ты рисковый! Вот только этого мало';
+                if (girl) text = 'Да ты рисковая! Вот только этого мало';
+            } else if (random == 2) {
+                text = answered_by + ' думал, что всех переиграл?';
+                if (girl) text = answered_by + ' думала, что всех переиграла?';
+            } else if (random == 3) {
+                text = answered_by + ' ожидал, что сможет так удивить нас?';
+                if (girl) text = answered_by + ' ожидала, что сможет так удивить нас?';
+            } else if (random >= 4) {
+                text = 'Только зря переживала';
+            }
         }
     }
 
