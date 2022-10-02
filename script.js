@@ -199,9 +199,9 @@ function startpage_render() {
 
 function settings_apply_button_click() {
     let player_selector = document.querySelector('#players-selector');
-    let players = player_selector.value;
+    let players = +player_selector.value;
     let maxscore_selector = document.querySelector('#maxscore-selector');
-    let maxscore = maxscore_selector.value;
+    let maxscore = +maxscore_selector.value;
     let name_selector = document.querySelector('#name-selector');
     let name = name_selector.value;
     let punishment_selector = document.querySelector('#punishment-selector');
@@ -232,6 +232,76 @@ function workarea_render() {
     let bottom_container = document.querySelector('#bottom-container-area');
 
     let cards_info = get_cards_info(data.user_name);
+    let min_score = false;
+    let max_score = false;
+    let min_score_players = [];
+    let max_score_players = [];
+    for (let player_key in data.players_data) {
+        player = data.players_data[player_key];
+        if (min_score === false) {
+            min_score = player.score;
+        }
+        if (max_score === false) {
+            max_score = player.score;
+        }
+        if (player.score < min_score) {
+            min_score = player.score;
+            min_score_players = [player_key];
+        } else if (player.score == min_score) {
+            min_score_players.push(player_key);
+        }
+        if (player.score > max_score) {
+            max_score = player.score;
+            max_score_players = [player_key];
+        } else if (player.score == max_score) {
+            max_score_players.push(player_key);
+        }
+    }
+    let score_diff = max_score - min_score;
+    let behind_players = [];
+    let leading_players = [];
+    if (data.players_amount == 7 || data.players_amount == 6) {
+        if (min_score_players.length == 1) {
+            behind_players = min_score_players;
+        } else if (min_score_players.length == 2 && score_diff >= 2) {
+            behind_players = min_score_players;
+        } else if (min_score_players.length == 3 && score_diff >= 3) {
+            behind_players = min_score_players;
+        }
+        if (max_score_players.length == 1) {
+            leading_players = max_score_players;
+        } else if (max_score_players.length == 2 && score_diff >= 2) {
+            leading_players = max_score_players;
+        } else if (max_score_players.length == 3 && score_diff >= 3) {
+            leading_players = max_score_players;
+        }
+    } else if (data.players_amount == 5) {
+        if (min_score_players.length == 1) {
+            behind_players = min_score_players;
+        } else if (min_score_players.length == 2 && score_diff >= 2) {
+            behind_players = min_score_players;
+        }
+        if (max_score_players.length == 1) {
+            leading_players = max_score_players;
+        } else if (max_score_players.length == 2 && score_diff >= 2) {
+            leading_players = max_score_players;
+        }
+    } else if (data.players_amount == 4 || data.players_amount == 3) {
+        if (min_score_players.length == 1) {
+            behind_players = min_score_players;
+        }
+        if (max_score_players.length == 1) {
+            leading_players = max_score_players;
+        }
+    } else if (data.players_amount == 2) {
+        if (min_score_players.length == 1 && score_diff >= 2) {
+            behind_players = min_score_players;
+        }
+        if (max_score_players.length == 1 && score_diff >= 2) {
+            leading_players = max_score_players;
+        }
+    }
+
     for (let player_key in data.players_data) {
         player = data.players_data[player_key];
         if (player.type == "user") {
@@ -380,9 +450,16 @@ function workarea_render() {
             let container_img = document.createElement('div');
             container_img.className = "player-img player-info-container-" + player.subside + "-img img-" + player.subpos;
 
+            let portrait_type = 'normal';
+            if (in_array(player_key, leading_players)) {
+                portrait_type = 'happy';
+            } else if (in_array(player_key, behind_players)) {
+                portrait_type = 'sad';
+            }
             let portrait = document.createElement('img');
-            portrait.className = player.border;
-            portrait.src = "images/sprites/" + player_key + "/type1_normal.png";
+            portrait.className = 'player-image ' + player.border;
+            portrait.src = "images/sprites/" + player_key + "/type1_" + portrait_type + ".png";
+            portrait.setAttribute('player', player_key);
             container_img.append(portrait);
 
             let name = document.createElement('div');
@@ -467,6 +544,9 @@ function forced_render(storage_data) {
     } else if (storage_data.phase.point == "bot_answer") {
         show_bot_answer();
         answer_button_click(true, true)
+    } else if (storage_data.phase.point == "endgame") {
+        let data = get_data();
+        next_round(data, true);
     }
 }
 
@@ -527,6 +607,18 @@ function rules_close_button_click() {
 }
 
 function restart_button_click() {
+    let restart = confirm("Сбросить весь прогресс и перезапустить игру?");
+    if (restart) {
+        restart_game();
+    }
+}
+
+function endgame() {
+    alert('Партия закончена, игра будет перезапущена');
+    restart_game();
+}
+
+function restart_game() {
     check_time();
     localStorage.clear();
     document.querySelector('#top-container-area').innerHTML = null;
@@ -565,7 +657,9 @@ function next_button_click() {
         answer_button_click(false, true);
     } else if (data.phase.point == "user_answer" || data.phase.point == "bot_answer") {
         speach_clear();
-        next_round(data);
+        next_round(data, false);
+    } else if (data.phase.point == "endgame") {
+        endgame();
     } else {
         speach_clear();
         console.log('not a new action');
@@ -1992,17 +2086,131 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
     return true;
 }
 
-function next_round(data) {
+function next_round(data, forced_render) {
     //расчет результатов
     let score = data.players_data[data.phase.active_player].score;
     let repeat_action = false;
     if (data.phase['answer_result'] === true) {
-        data.players_data[data.phase.active_player].score = score + 1;
+        if (!forced_render) {
+            data.players_data[data.phase.active_player].score = score + 1;
+        }
         repeat_action = true;
     } else if (data.phase['answer_result'] === false) {
         data.players_data[data.phase.active_player].score = score - 1;
     }
     data.phase['answer_result'] = null;
+
+    //проверка на окончание игры
+    if (data.players_data[data.phase.active_player].score >= data.maxscore) {
+        let winner = data.phase.active_player;
+        let punishment = '';
+        if (data.players_data[winner].type == 'user') {
+            punishment = data.players_data[winner].punishment;
+        } else {
+            let punishment_code = data.players_data[winner].punishment;
+            punishment = get_punishment(winner, punishment_code);
+            let portrait = document.querySelector('.player-image[player="' + winner + '"]');
+            portrait.src = "images/sprites/" + winner + "/type1_happy.png";
+        }
+        let win_text = '';
+        if (winner == 'ri') {
+            win_text = 'Нипаааа~☆ Я победила же!';
+        } else if (winner == 'ha') {
+            win_text = 'Ау-ау! Я наконец смогла вас всех обыграть!';
+        } else if (winner == 're') {
+            win_text = 'Хаууу! Рэна так увлеклась, что и не заметила, как выйграла!';
+        } else if (winner == 'sa') {
+            win_text = 'О-хо-хо! Вы даже не представляли, с кем связались!';
+        } else if (winner == 'mi') {
+            win_text = 'Моя взяла! Эх, и не завидую я этому несчастному...';
+        } else if (winner == 'si') {
+            win_text = 'Вы серьезно надеялись обыграть меня? Наивно...';
+        } else {
+            win_text = 'Ну вот и все, победа за мной!';
+        }
+        win_text_block = win_text + ' Наказание для проигравшего - <span class="color_weapon">' + punishment + '!</span>';
+        win_text = win_text + ' Наказание для проигравшего - ' + punishment + '!';
+        let min_score = false;
+        let min_score_players = [];
+        for (let player_key in data.players_data) {
+            player = data.players_data[player_key];
+            if (min_score === false) {
+                min_score = player.score;
+            }
+            if (player.score < min_score) {
+                min_score = player.score;
+                min_score_players = [player_key];
+            } else if (player.score == min_score) {
+                min_score_players.push(player_key);
+            }
+        }
+        if (min_score_players.length == 1) {
+            win_text = win_text + ' И выполнять его будет ' + data.players_data[min_score_players[0]].name;
+            win_text_block = win_text_block + ' И выполнять его будет <span class="' + min_score_players[0] + '-text">' + data.players_data[min_score_players[0]].name + '<span>';
+        } else {
+            win_text = win_text + ' И выполнять его будут:';
+            win_text_block = win_text_block + ' И выполнять его будут:';
+            for (let loose_player_key in min_score_players) {
+                let loose_player = min_score_players[loose_player_key];
+                if (loose_player_key != 0) {
+                    win_text = win_text + ',';
+                    win_text_block = win_text_block + ',';
+                }
+                win_text = win_text + ' ' + data.players_data[loose_player].name;
+                win_text_block = win_text_block + ' <span class="' + loose_player + '-text">' + data.players_data[loose_player].name + '</span>';
+            }
+        }
+        let delay = 100;
+        localStorage.setItem('button_block', JSON.stringify(true));
+        setTimeout(() => {
+            player_speach_show(data.players_data[winner].pos, data.players_data[winner].side, win_text, win_text_block);
+        }, delay);
+
+        let girl = false;
+        if (in_array(winner, ['ri', 'ha', 'mi', 'si', 're', 'sa'])) {
+            girl = true;
+        }
+        for (let loose_player_key in min_score_players) {
+            let loose_player = min_score_players[loose_player_key];
+            delay = delay + 300;
+            let loose_text = '';
+            if (loose_player == 'ri') {
+                loose_text = 'Мииии... ' + data.players_data[winner].name + ' слишком жесток ко мне же...';
+                if (girl) loose_text = 'Мииии... ' + data.players_data[winner].name + ' слишком жестока ко мне же...';
+            } else if (loose_player == 'ha') {
+                loose_text = 'Ау-ау-ау! ' + data.players_data[winner].name + ' решил совсем меня не жалеть...';
+                if (girl) loose_text = 'Ау-ау-ау! ' + data.players_data[winner].name + ' решила совсем меня не жалеть...';
+            } else if (loose_player == 're') {
+                loose_text = 'Хаууу... Теперь Рэне придется эту жуть выполнять, выполнять?';
+            } else if (loose_player == 'sa') {
+                loose_text = 'Уаааааааа! ' + data.players_data[winner].name + ' просто издевается надо мноооой!';
+            } else if (loose_player == 'mi') {
+                loose_text = 'Лидер клуба вынуждена выполнять наказание... Как я могла до такого дойти...';
+            } else if (loose_player == 'si') {
+                loose_text = 'Ну ничего, в следующий раз я напишу там такое, что ты еще пожалеешь!';
+            } else {
+                loose_text = 'Придется это выполнять, кажется...';
+            }
+            if (data.players_data[loose_player].type != 'user') {
+                let portrait = document.querySelector('.player-image[player="' + loose_player + '"]');
+                portrait.src = "images/sprites/" + loose_player + "/type1_sad.png";
+            }
+            let unblock = false;
+            if (loose_player_key == min_score_players.length - 1) {
+                unblock = true;
+            }
+            setTimeout(() => {
+                player_speach_show(data.players_data[loose_player].pos, data.players_data[loose_player].side, loose_text, false);
+                if (unblock == true) {
+                    localStorage.setItem('button_block', JSON.stringify(false));
+                }
+            }, delay);
+        }
+        data.phase.point = "endgame";
+        update_data(data);
+        return;
+    }
+
     //перераздача карт
     let cards_players = data.cards_info.cards_players;
     let cards_weapons = data.cards_info.cards_weapons;
@@ -2106,12 +2314,13 @@ function set_data(players_amount, user_name, maxscore, punishment) {
     }
 
     let players_data = {};
-    let player = { "id": "user1", "side": "bottom", "pos": "bottom", "type": "user", "name": user_name, "score": 0 };
+    let player = { "id": "user1", "side": "bottom", "pos": "bottom", "type": "user", "name": user_name, "score": 0, "punishment": punishment };
     players_data["user1"] = player;
     let players_ids = ["user1"];
 
     for (let i = 0; i < bots_amount; i++) {
-        player = { "id": bots[i], "side": sides[i], "pos": positions[i], "type": "bot", "name": bots_info[bots[i]].name, "border": bots_info[bots[i]].border, "score": 0 }
+        bot_punishment = Math.floor(Math.random() * 5);
+        player = { "id": bots[i], "side": sides[i], "pos": positions[i], "type": "bot", "name": bots_info[bots[i]].name, "border": bots_info[bots[i]].border, "score": 0, "punishment": bot_punishment }
         players_data[bots[i]] = player;
         players_ids.push(bots[i]);
     }
@@ -2155,12 +2364,14 @@ function set_data(players_amount, user_name, maxscore, punishment) {
         "answer_result": null,
     }
 
+    //!!!!!!!!!!!!!!!!!!! ПОТОМ УБРАТЬ
+    maxscore = 1;
+    //!!!!!!!!!!!!!!!!!!! ПОТОМ УБРАТЬ
     let data = {
         "players_amount": players_amount,
         "bots": bots,
         "user_name": user_name,
         "maxscore": maxscore,
-        "punishment": punishment,
         "order": order,
         "players_data": players_data,
         "cards_info": cards_info,
@@ -2277,6 +2488,84 @@ function get_cards_info(user_name) {
         "l17": { "id": "l17", "type": "location", "name": "Свалка" },
     };
     return cards_base_info;
+}
+
+function get_punishment(winner, punishment_code) {
+    let punishment = 'Ничего не делать';
+    if (winner == 'ri') {
+        if (punishment_code == 0) {
+            punishment = '';
+        } else if (punishment_code == 1) {
+            punishment = '';
+        } else if (punishment_code == 2) {
+            punishment = '';
+        } else if (punishment_code == 3) {
+            punishment = '';
+        } else if (punishment_code >= 4) {
+            punishment = '';
+        }
+    } else if (winner == 'ha') {
+        if (punishment_code == 0) {
+            punishment = '';
+        } else if (punishment_code == 1) {
+            punishment = '';
+        } else if (punishment_code == 2) {
+            punishment = '';
+        } else if (punishment_code == 3) {
+            punishment = '';
+        } else if (punishment_code >= 4) {
+            punishment = '';
+        }
+    } else if (winner == 're') {
+        if (punishment_code == 0) {
+            punishment = 'наказание 1';
+        } else if (punishment_code == 1) {
+            punishment = 'наказание 2';
+        } else if (punishment_code == 2) {
+            punishment = 'наказание 3';
+        } else if (punishment_code == 3) {
+            punishment = 'наказание 4';
+        } else if (punishment_code >= 4) {
+            punishment = 'наказание 5';
+        }
+    } else if (winner == 'sa') {
+        if (punishment_code == 0) {
+            punishment = '';
+        } else if (punishment_code == 1) {
+            punishment = '';
+        } else if (punishment_code == 2) {
+            punishment = '';
+        } else if (punishment_code == 3) {
+            punishment = '';
+        } else if (punishment_code >= 4) {
+            punishment = '';
+        }
+    } else if (winner == 'mi') {
+        if (punishment_code == 0) {
+            punishment = '';
+        } else if (punishment_code == 1) {
+            punishment = '';
+        } else if (punishment_code == 2) {
+            punishment = '';
+        } else if (punishment_code == 3) {
+            punishment = '';
+        } else if (punishment_code >= 4) {
+            punishment = '';
+        }
+    } else if (winner == 'si') {
+        if (punishment_code == 0) {
+            punishment = '';
+        } else if (punishment_code == 1) {
+            punishment = '';
+        } else if (punishment_code == 2) {
+            punishment = '';
+        } else if (punishment_code == 3) {
+            punishment = '';
+        } else if (punishment_code >= 4) {
+            punishment = '';
+        }
+    }
+    return punishment;
 }
 
 function shuffle(array) {

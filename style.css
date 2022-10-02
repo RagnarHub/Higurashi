@@ -476,6 +476,36 @@ img {
     color: red;
 }
 
+/* texts */
+
+.ri-text {
+    color: #293fcc;
+}
+
+.ha-text {
+    color: #7252cc;
+}
+
+.mi-text {
+    color: #14b853;
+}
+
+.re-text {
+    color: #ec8828;
+}
+
+.si-text {
+    color: #14b853;
+}
+
+.sa-text {
+    color: #bd910f;
+}
+
+.user1-text {
+    color: red;
+}
+
 /* text colors */
 .color_has_card {
     color: blue;
@@ -506,7 +536,7 @@ img {
     padding: 3px 10px;
     font-size: 90%;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    z-index: 60;
+    z-index: 58;
     user-select: none;
 }
 
