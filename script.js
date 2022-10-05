@@ -109,10 +109,12 @@ function startpage_render() {
     maxscore_selector.id = "maxscore-selector";
     maxscore_selector_container.append(maxscore_selector);
 
-    let maxscores = [3, 5, 7, 10, 15, 20, 25, 50];
+    let maxscores = [1, 3, 5, 7, 10, 15, 20, 25, 50];
     for (let score of maxscores) {
         let score_text = '';
-        if (score == 3) {
+        if (score == 1) {
+            score_text = score + ' очко';
+        } else if (score >= 2 && score <= 4) {
             score_text = score + ' очка';
         } else {
             score_text = score + ' очков';
@@ -576,6 +578,7 @@ function show_rules() {
         "После этого ход передается по часовой стрелке к следующему игроку. В случае ответа, участник называет комбинацию, которая, по его мнению, наверняка является правильной. " +
         "В этом случае раунд сразу завершается и выскрываются отложенные в начале карты с правильным ответом. Если игрок верно отгадал его, он получает 1 балл на счет, " +
         "если не отгадал - 1 балл у него забирается. После этого начинается следующий раунд. Игра идет, пока кто-либо из участников не наберет установленное для победы количество баллов. " +
+        "Перед началом игры каждый придумывает наказание, и если он побеждает, то проигравший должен будет его выполнить. " +
         "При нажатии конпки \"Догадка\" можно высказать предположение или дать ответ. При нажатии конпки \"Рестарт\" игра будет перезапущена.<br>" +
         "Ну вот и все. Вперед и в бой же!";
     modal.append(modal_center);
@@ -1924,7 +1927,7 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = answered_by + ' протсо уничтожил нас.. Ау...';
                 if (girl) text = answered_by + ' протсо уничтожила нас.. Ау...';
             } else if (random >= 4) {
-                text = 'Ау... ' + answered_by + 'слишком хорошо играет';
+                text = 'Ау... ' + answered_by + ' слишком хорошо играет';
             }
         } else if (player.id == 're') {
             if (random == 0) {
@@ -2364,9 +2367,6 @@ function set_data(players_amount, user_name, maxscore, punishment) {
         "answer_result": null,
     }
 
-    //!!!!!!!!!!!!!!!!!!! ПОТОМ УБРАТЬ
-    maxscore = 1;
-    //!!!!!!!!!!!!!!!!!!! ПОТОМ УБРАТЬ
     let data = {
         "players_amount": players_amount,
         "bots": bots,
@@ -2494,75 +2494,75 @@ function get_punishment(winner, punishment_code) {
     let punishment = 'Ничего не делать';
     if (winner == 'ri') {
         if (punishment_code == 0) {
-            punishment = '';
+            punishment = 'Погладить директора по лысине';
         } else if (punishment_code == 1) {
-            punishment = '';
+            punishment = 'Целый день мяукать вместо обычной речи';
         } else if (punishment_code == 2) {
-            punishment = '';
+            punishment = 'Незаметно погладить по голове соседа слева';
         } else if (punishment_code == 3) {
-            punishment = '';
+            punishment = 'Все предыдущие сегодняшние наказания вместе взятые';
         } else if (punishment_code >= 4) {
-            punishment = '';
+            punishment = 'Выпить вечером вместе со мной';
         }
     } else if (winner == 'ha') {
         if (punishment_code == 0) {
-            punishment = '';
+            punishment = 'Незаметно следовать за соседом справа до конца дня';
         } else if (punishment_code == 1) {
-            punishment = '';
+            punishment = 'Попросить прощения у каждого в этой комнате, когда он не ждет';
         } else if (punishment_code == 2) {
-            punishment = '';
+            punishment = 'Купить мне булочек с кремом';
         } else if (punishment_code == 3) {
-            punishment = '';
+            punishment = 'Напугать ночью деревенского старосту';
         } else if (punishment_code >= 4) {
-            punishment = '';
+            punishment = 'Забрать у Рики из холодильника всю горчицу';
         }
     } else if (winner == 're') {
         if (punishment_code == 0) {
-            punishment = 'наказание 1';
+            punishment = 'Провести ночь одному на свалке вдали от людей';
         } else if (punishment_code == 1) {
-            punishment = 'наказание 2';
+            punishment = 'Пройти ночью через лес до ближайшего города одному';
         } else if (punishment_code == 2) {
-            punishment = 'наказание 3';
+            punishment = 'Помочь Рэне немного почесать шею, где ей неудобно самой';
         } else if (punishment_code == 3) {
-            punishment = 'наказание 4';
+            punishment = 'Проснуться посреди ночи и пролежать полчаса с открытыми глазами';
         } else if (punishment_code >= 4) {
-            punishment = 'наказание 5';
+            punishment = 'Пойти с Рэной слушать пение цикад вечером';
         }
     } else if (winner == 'sa') {
         if (punishment_code == 0) {
-            punishment = '';
+            punishment = 'Переночевать в собачьей конуре';
         } else if (punishment_code == 1) {
-            punishment = '';
+            punishment = 'Съесть целую тарелку печеной тыквы';
         } else if (punishment_code == 2) {
-            punishment = '';
+            punishment = 'Называть меня хозяйкой до конца дня';
         } else if (punishment_code == 3) {
-            punishment = '';
+            punishment = 'Называть меня старшей сестренкой до конца дня';
         } else if (punishment_code >= 4) {
-            punishment = '';
+            punishment = 'Забрать меня к себе домой до завтра';
         }
     } else if (winner == 'mi') {
         if (punishment_code == 0) {
-            punishment = '';
+            punishment = 'Купить в аптеке мазь от геморроя';
         } else if (punishment_code == 1) {
-            punishment = '';
+            punishment = 'Прицепить к носу прищепкой усы и ходить так до вечера';
         } else if (punishment_code == 2) {
-            punishment = '';
+            punishment = 'Пройти до дома в присяде спиной';
         } else if (punishment_code == 3) {
-            punishment = '';
+            punishment = 'Демонстративно заснуть на уроке';
         } else if (punishment_code >= 4) {
-            punishment = '';
+            punishment = 'Съесть обед со связанными за спиной руками';
         }
     } else if (winner == 'si') {
         if (punishment_code == 0) {
-            punishment = '';
+            punishment = 'Выйти за меня в смену на работе';
         } else if (punishment_code == 1) {
-            punishment = '';
+            punishment = 'Приготовить мне что-нибудь на обед';
         } else if (punishment_code == 2) {
-            punishment = '';
+            punishment = 'Побыть моим личным телохранителем до вечера';
         } else if (punishment_code == 3) {
-            punishment = '';
+            punishment = 'Рассказать мне одну из своих тайн';
         } else if (punishment_code >= 4) {
-            punishment = '';
+            punishment = 'Вывести чем-нибудь сеструху из себя';
         }
     }
     return punishment;
