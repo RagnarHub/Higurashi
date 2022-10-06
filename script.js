@@ -1471,6 +1471,41 @@ function show_bot_selected() {
     text_block = text_block + ' : Думаю, что преступник - <span class="color_person">';
     text = text + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
     text_block = text_block + cards_info[data.phase.assumption[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[data.phase.assumption[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[data.phase.assumption[2]]["name"] + '</span>';
+    if (data.special_mode) {
+        let random_value = Math.floor(Math.random() * 100);
+        if (random_value < 10) {
+            text_block = text_block + '. ';
+            if (cards_info[selected[0]]["id"] == data.phase.active_player) {
+                if (data.phase.active_player == 'ri') {
+                    text_block = text_block + 'Я всегда знаю, как это сделать тихо и быстро же!';
+                } else if (data.phase.active_player == 'ha') {
+                    text_block = text_block + 'Я долго ходила по пятам за этим человеком.';
+                } else if (data.phase.active_player == 're') {
+                    text_block = text_block + 'Как думаешь, Рэна здорово его прикончила, прикончила?';
+                } else if (data.phase.active_player == 'sa') {
+                    text_block = text_block + 'О-хо-хо! Вы думали, я упустила бы такую возможность?';
+                } else if (data.phase.active_player == 'mi') {
+                    text_block = text_block + 'У нас в имении достаточно метса, чтобы спрятать его труп.';
+                } else if (data.phase.active_player == 'si') {
+                    text_block = text_block + 'Его навсегда унес демон. В этот раз им была я.';
+                }
+            } else {
+                if (data.phase.active_player == 'ri') {
+                    text_block = text_block + 'Это было бы довольно расчетливо же, ты не находишь?';
+                } else if (data.phase.active_player == 'ha') {
+                    text_block = text_block + 'Он просто был проклят, но не осознавал этого.';
+                } else if (data.phase.active_player == 're') {
+                    text_block = text_block + 'Просто за ним пришло проклятие Оясиро-сама.';
+                } else if (data.phase.active_player == 'sa') {
+                    text_block = text_block + 'Вы бы тоже наладились таким зрелищем, не так ли?';
+                } else if (data.phase.active_player == 'mi') {
+                    text_block = text_block + 'Как думаешь, жертва успела помучиться? Надеюсь, что да.';
+                } else if (data.phase.active_player == 'si') {
+                    text_block = text_block + 'Жаль, что не удалось провернуть это лично.';
+                }
+            }
+        }
+    }
     setTimeout(() => {
         player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text, text_block);
     }, 300);
@@ -1487,6 +1522,38 @@ function show_bot_answer() {
     text_block = text_block + ' : <span class="color_answer">Я ЗНАЮ ОТВЕТ!</span> Преступник - <span class="color_person">';
     text = text + cards_info[data.phase.assumption[0]]["name"] + ", орудие - " + cards_info[data.phase.assumption[1]]["name"] + ", место - " + cards_info[data.phase.assumption[2]]["name"];
     text_block = text_block + cards_info[data.phase.assumption[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[data.phase.assumption[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[data.phase.assumption[2]]["name"] + '</span>';
+    if (data.special_mode) {
+        text_block = text_block + '. ';
+        if (cards_info[selected[0]]["id"] == data.phase.active_player) {
+            if (data.phase.active_player == 'ri') {
+                text_block = text_block + 'Я всегда знаю, как это сделать тихо и быстро же!';
+            } else if (data.phase.active_player == 'ha') {
+                text_block = text_block + 'Я долго ходила по пятам за этим человеком.';
+            } else if (data.phase.active_player == 're') {
+                text_block = text_block + 'Как думаешь, Рэна здорово его прикончила, прикончила?';
+            } else if (data.phase.active_player == 'sa') {
+                text_block = text_block + 'О-хо-хо! Вы думали, я упустила бы такую возможность?';
+            } else if (data.phase.active_player == 'mi') {
+                text_block = text_block + 'У нас в имении достаточно метса, чтобы спрятать его труп.';
+            } else if (data.phase.active_player == 'si') {
+                text_block = text_block + 'Его навсегда унес демон. В этот раз им была я.';
+            }
+        } else {
+            if (data.phase.active_player == 'ri') {
+                text_block = text_block + 'Это было бы довольно расчетливо же, ты не находишь?';
+            } else if (data.phase.active_player == 'ha') {
+                text_block = text_block + 'Он просто был проклят, но не осознавал этого.';
+            } else if (data.phase.active_player == 're') {
+                text_block = text_block + 'Просто за ним пришло проклятие Оясиро-сама.';
+            } else if (data.phase.active_player == 'sa') {
+                text_block = text_block + 'Вы бы тоже наладились таким зрелищем, не так ли?';
+            } else if (data.phase.active_player == 'mi') {
+                text_block = text_block + 'Как думаешь, жертва успела помучиться? Надеюсь, что да.';
+            } else if (data.phase.active_player == 'si') {
+                text_block = text_block + 'Жаль, что не удалось провернуть это лично.';
+            }
+        }
+    }
 
     setTimeout(() => {
         player_speach_show(data.players_data[player]["pos"], data.players_data[player]["side"], text, text_block);
@@ -2215,6 +2282,7 @@ function next_round(data, forced_render) {
     }
 
     //перераздача карт
+    data.round = data.round + 1;
     let cards_players = data.cards_info.cards_players;
     let cards_weapons = data.cards_info.cards_weapons;
     let cards_locations = data.cards_info.cards_locations;
@@ -2377,6 +2445,8 @@ function set_data(players_amount, user_name, maxscore, punishment) {
         "cards_info": cards_info,
         "phase": phase,
         "history": [],
+        "special_mode": false,
+        "round": 1,
     }
 
     main_encoding(data);
