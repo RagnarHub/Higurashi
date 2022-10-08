@@ -1,3 +1,7 @@
+body {
+    margin: 0;
+}
+
 #main-page {
     background-image: url('images/bg/main_page.jpg');
     min-height: 550px;
@@ -14,34 +18,73 @@
     border: 2px solid white;
     position: relative;
     perspective: 600px;
+    opacity: 0.95;
 }
 
 .workarea-day {
     background-image: url('images/bg/workarea_day.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity: 0.95;
 }
 
 .workarea-sunset {
     background-image: url('images/bg/workarea_sunset.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity: 0.95;
 }
 
 .workarea-night {
     background-image: url('images/bg/workarea_night.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity: 0.95;
 }
 
-.workarea-day {
+.workarea-day-opacity, .workarea-sunset-opacity, .workarea-night-opacity {
+    position: relative;
+}
+
+.workarea-day-opacity::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    opacity: .6;
+    content: "";
+    z-index: -1;
     background-image: url('images/bg/workarea_day.png');
     background-position: center;
     background-size: 100% 100%;
-    opacity: 0.95;
+}
+
+.workarea-sunset-opacity::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    opacity: .6;
+    content: "";
+    z-index: -1;
+    background-image: url('images/bg/workarea_sunset.png');
+    background-position: center;
+    background-size: 100% 100%;
+}
+
+.workarea-night-opacity::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    opacity: .6;
+    content: "";
+    z-index: -1;
+    background-image: url('images/bg/workarea_night.png');
+}
+
+.bg-cover {
+    background-size: cover;
 }
 
 img {

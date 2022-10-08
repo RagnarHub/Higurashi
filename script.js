@@ -3,15 +3,15 @@ let storage_data = localStorage.getItem('data');
 if (!storage_data) {
     startpage_render();
 } else {
-    workarea_render();
+    workarea_render(true);
     forced_render(storage_data);
 }
 
 
 
 function check_time() {
-    Data = new Date();
-    let hour = Data.getHours();
+    Time = new Date();
+    let hour = Time.getHours();
 
     if (hour < 6 || hour >= 22) {
         document.querySelector('#workarea').className = 'workarea-night';
@@ -123,7 +123,7 @@ function startpage_render() {
         maxscore_option.value = score;
         maxscore_option.className = "maxscore-selector";
         maxscore_option.innerHTML = score_text;
-        if (score == 5) {
+        if (score == 3) {
             maxscore_option.selected = "selected";
         }
         maxscore_selector.append(maxscore_option);
@@ -222,16 +222,47 @@ function settings_apply_button_click() {
     }
 
     set_data(players, name, maxscore, punishment);
-    workarea_render();
+    workarea_render(false);
     show_rules();
 }
 
-function workarea_render() {
+function workarea_render(forced_render) {
     let data = get_data();
+
+    Time = new Date();
+    let hour = Time.getHours();
+    if ((hour < 6 || hour >= 22) && data.round > 1 && data.special_mode != true && !forced_render) {
+        let random_value = Math.floor(Math.random() * 100);
+        let sr_chanse = 2;
+        if (hour >= 2 && hour < 4) {
+            let sr_chanse = 6;
+        } else if (hour < 6) {
+            let sr_chanse = 4;
+        }
+        sr_chanse = 50; //для тестов, ПОТОМ УБРАТЬ
+        if (random_value < sr_chanse) {
+            data.special_mode = true; //запуск спец. режима
+        }
+    }
+
     let top_container = document.querySelector('#top-container-area');
     let left_container = document.querySelector('#left-container-area');
     let right_container = document.querySelector('#right-container-area');
     let bottom_container = document.querySelector('#bottom-container-area');
+
+    let main_page = document.querySelector('#main-page');
+    let workarea = document.querySelector('#workarea');
+    if (data.special_mode) {
+        main_page.style.backgroundImage = "url('images/bg/eye.jpg')";
+        main_page.classList.add('bg-cover');
+        let main_page_class_name = workarea.classList[0];
+        workarea.classList.add(main_page_class_name + '-opacity');
+        workarea.classList.remove(main_page_class_name);
+    } else {
+        main_page.style.backgroundImage = "url('images/bg/main_page.jpg')";
+        main_page.classList.remove('bg-cover');
+        check_time();
+    }
 
     let cards_info = get_cards_info(data.user_name);
     let min_score = false;
@@ -460,7 +491,11 @@ function workarea_render() {
             }
             let portrait = document.createElement('img');
             portrait.className = 'player-image ' + player.border;
-            portrait.src = "images/sprites/" + player_key + "/type1_" + portrait_type + ".png";
+            if (data.special_mode) {
+                portrait.src = "images/sprites/" + player_key + "/type2.png";
+            } else {
+                portrait.src = "images/sprites/" + player_key + "/type1_" + portrait_type + ".png";
+            }
             portrait.setAttribute('player', player_key);
             container_img.append(portrait);
 
@@ -501,7 +536,11 @@ function workarea_render() {
                 pos_player.append(card);
 
                 let card_img = document.createElement('img');
-                card_img.src = "images/cards/back.png";
+                if (data.special_mode) {
+                    card_img.src = "images/cards/back2.png";
+                } else {
+                    card_img.src = "images/cards/back.png";
+                }
                 card.append(card_img);
             }
 
@@ -514,7 +553,6 @@ function workarea_render() {
             } else if (player.side == 'bottom') {
                 bottom_container.append(pos_player);
             }
-
         }
     }
 
@@ -528,6 +566,19 @@ function workarea_render() {
     maxscore.className = "informer-maxscore";
     maxscore.innerHTML = 'Счет для победы: ' + data.maxscore;
     document.querySelector('#workarea').append(maxscore);
+    update_data(data);
+}
+
+function set_special_mode() {
+    let data = get_data();
+    data.special_mode = true;
+    update_data(data);
+}
+
+function unset_special_mode() {
+    let data = get_data();
+    data.special_mode = false;
+    update_data(data);
 }
 
 function forced_render(storage_data) {
@@ -622,6 +673,14 @@ function endgame() {
 }
 
 function restart_game() {
+    let data = get_data();
+    if (data.special_mode) {
+        data.special_mode = false;
+        let main_page = document.querySelector('#main-page');
+        main_page.style.backgroundImage = "url('images/bg/main_page.jpg')";
+        main_page.classList.remove('bg-cover');
+        update_data(data);
+    }
     check_time();
     localStorage.clear();
     document.querySelector('#top-container-area').innerHTML = null;
@@ -643,8 +702,10 @@ function next_button_click() {
     if (block == true) {
         return false;
     }
-    check_time();
     let data = get_data();
+    if (!data.special_mode) {
+        check_time();
+    }
     if (data.phase.point == "user_action") {
         speach_clear();
         new_user_action(data);
@@ -850,7 +911,9 @@ function assumption_reaction(forced_render = false, bot_action = false) {
         let selected_location = location_selector.options[location_selector.options.selectedIndex].getAttribute('card_code');
         selected = [selected_player, selected_weapon, selected_location];
 
-        check_time();
+        if (!data.special_mode) {
+            check_time();
+        }
         let workarea = document.querySelector('#workarea');
         workarea.style.opacity = "0.95";
 
@@ -1126,10 +1189,12 @@ function assumption_calc(data) {
     }
     data.history.push({ "player": active_player, "selected": selected }); //запись в историю
     //перевод действия на следующий ход
-    next_action_prepare(data);
+    update_data(data);
+    next_action_prepare();
 }
 
-function next_action_prepare(data, repeat_action = false, new_round = false) {
+function next_action_prepare(repeat_action = false, new_round = false) {
+    let data = get_data();
     let order = clone(data.order);
     order = order.splice(order.indexOf(data.phase.position)).concat(order);
     if (repeat_action) {
@@ -1273,8 +1338,10 @@ function get_corr_factor(history, active_player, selected) {
 }
 
 function new_bot_action() {
-    check_time();
     let data = get_data();
+    if (!data.special_mode) {
+        check_time();
+    }
 
     let player = data.phase.active_player;
     let position = data.phase.position;
@@ -1473,7 +1540,7 @@ function show_bot_selected() {
     text_block = text_block + cards_info[data.phase.assumption[0]]["name"] + '</span>, орудие - <span class="color_weapon">' + cards_info[data.phase.assumption[1]]["name"] + '</span>, место - <span class="color_location">' + cards_info[data.phase.assumption[2]]["name"] + '</span>';
     if (data.special_mode) {
         let random_value = Math.floor(Math.random() * 100);
-        if (random_value < 10) {
+        if (random_value < 15) {
             text_block = text_block + '. ';
             if (cards_info[selected[0]]["id"] == data.phase.active_player) {
                 if (data.phase.active_player == 'ri') {
@@ -1483,7 +1550,7 @@ function show_bot_selected() {
                 } else if (data.phase.active_player == 're') {
                     text_block = text_block + 'Как думаешь, Рэна здорово его прикончила, прикончила?';
                 } else if (data.phase.active_player == 'sa') {
-                    text_block = text_block + 'О-хо-хо! Вы думали, я упустила бы такую возможность?';
+                    text_block = text_block + 'Меня вынудили это сделать, но иногда есть только один выход.';
                 } else if (data.phase.active_player == 'mi') {
                     text_block = text_block + 'У нас в имении достаточно метса, чтобы спрятать его труп.';
                 } else if (data.phase.active_player == 'si') {
@@ -1491,13 +1558,13 @@ function show_bot_selected() {
                 }
             } else {
                 if (data.phase.active_player == 'ri') {
-                    text_block = text_block + 'Это было бы довольно расчетливо же, ты не находишь?';
+                    text_block = text_block + 'Это было довольно расчетливо же, ты не находишь?';
                 } else if (data.phase.active_player == 'ha') {
                     text_block = text_block + 'Он просто был проклят, но не осознавал этого.';
                 } else if (data.phase.active_player == 're') {
                     text_block = text_block + 'Просто за ним пришло проклятие Оясиро-сама.';
                 } else if (data.phase.active_player == 'sa') {
-                    text_block = text_block + 'Вы бы тоже наладились таким зрелищем, не так ли?';
+                    text_block = text_block + 'Вы тоже наслаждались этим зрелищем, не так ли?';
                 } else if (data.phase.active_player == 'mi') {
                     text_block = text_block + 'Как думаешь, жертва успела помучиться? Надеюсь, что да.';
                 } else if (data.phase.active_player == 'si') {
@@ -1532,7 +1599,7 @@ function show_bot_answer() {
             } else if (data.phase.active_player == 're') {
                 text_block = text_block + 'Как думаешь, Рэна здорово его прикончила, прикончила?';
             } else if (data.phase.active_player == 'sa') {
-                text_block = text_block + 'О-хо-хо! Вы думали, я упустила бы такую возможность?';
+                text_block = text_block + 'Меня вынудили это сделать, но иногда есть только один выход.';
             } else if (data.phase.active_player == 'mi') {
                 text_block = text_block + 'У нас в имении достаточно метса, чтобы спрятать его труп.';
             } else if (data.phase.active_player == 'si') {
@@ -1540,13 +1607,13 @@ function show_bot_answer() {
             }
         } else {
             if (data.phase.active_player == 'ri') {
-                text_block = text_block + 'Это было бы довольно расчетливо же, ты не находишь?';
+                text_block = text_block + 'Это было довольно расчетливо же, ты не находишь?';
             } else if (data.phase.active_player == 'ha') {
                 text_block = text_block + 'Он просто был проклят, но не осознавал этого.';
             } else if (data.phase.active_player == 're') {
                 text_block = text_block + 'Просто за ним пришло проклятие Оясиро-сама.';
             } else if (data.phase.active_player == 'sa') {
-                text_block = text_block + 'Вы бы тоже наладились таким зрелищем, не так ли?';
+                text_block = text_block + 'Вы тоже наслаждались этим зрелищем, не так ли?';
             } else if (data.phase.active_player == 'mi') {
                 text_block = text_block + 'Как думаешь, жертва успела помучиться? Надеюсь, что да.';
             } else if (data.phase.active_player == 'si') {
@@ -1834,7 +1901,9 @@ function answer_button_click(forced_render = false, bot_action = false) {
         let selected_location = location_selector.options[location_selector.options.selectedIndex].getAttribute('card_code');
         selected = [selected_player, selected_weapon, selected_location];
 
-        check_time();
+        if (!data.special_mode) {
+            check_time();
+        }
         let workarea = document.querySelector('#workarea');
         workarea.style.opacity = "0.95";
 
@@ -1903,8 +1972,11 @@ function answer_button_click(forced_render = false, bot_action = false) {
 
             let answer_card_img_back = document.createElement('img');
             answer_card_img_back.className = "answer-card-img-back";
-            answer_card_img_back.src = "images/cards/back.png";
-
+            if (data.special_mode) {
+                answer_card_img_back.src = "images/cards/back2.png";
+            } else {
+                answer_card_img_back.src = "images/cards/back.png";
+            }
             answer_card.append(answer_card_img);
             answer_card.append(answer_card_img_back);
             workarea.append(answer_card);
@@ -1969,7 +2041,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
         text = 'Тебе просто повезло!';
         let random = Math.floor(Math.random() * 5)
         if (player.id == 'ri') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Похоже, ты прекрасно разбираешься в таких вещах, не так ли?';
+            } else if (random == 0) {
                 text = 'Миии... С нами с легкостью разделались же!';
             } else if (random == 1) {
                 text = 'У тебя совсем не плохо получается';
@@ -1982,7 +2056,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'Миии... Снова нас обыграли же...';
             }
         } else if (player.id == 'ha') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Не думай, что сможешь всегда побеждать судьбу.';
+            } else if (random == 0) {
                 text = 'Ау-ау-ау... Опять обыграли...';
             } else if (random == 1) {
                 text = 'Ты хорошо постарался!';
@@ -1997,7 +2073,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'Ау... ' + answered_by + ' слишком хорошо играет';
             }
         } else if (player.id == 're') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Ложь! Так быстро угадать нельзя! Что ты от нас скрываешь, скрываешь?';
+            } else if (random == 0) {
                 text = 'Хаууу! ' + answered_by + ' так здорово играет!';
             } else if (random == 1) {
                 text = 'Хаууу! Как ты так смог, так смог?';
@@ -2011,7 +2089,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'Ну и что Рэна теперь будет делать, делать...';
             }
         } else if (player.id == 'sa') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Вы просто хотите уничтожить меня. Не подходи ко мне!';
+            } else if (random == 0) {
                 text = 'О-хо-хо! ' + answered_by + ', похоже, решил всех победить!';
                 if (girl) text = 'О-хо-хо! ' + answered_by + ', похоже, решила всех победить!';
             } else if (random == 1) {
@@ -2025,7 +2105,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'Думаете, этого будет достаточно вам для победы? Как бы не так!';
             }
         } else if (player.id == 'mi') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Это не сойдет тебе с рук. Я не позволю.';
+            } else if (random == 0) {
                 text = 'А ' + answered_by + ' в этот раз неплохо себя показал';
                 if (girl) text = 'А ' + answered_by + ' в этот раз неплохо себя показала';
             } else if (random == 1) {
@@ -2038,7 +2120,10 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'Эй, эй! Я тоже собиралась ответить!';
             }
         } else if (player.id == 'si') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Откуда ты знал? Я заставлю тебя рассказть, что ты скрываешь от меня!';
+                if (girl) text = 'Откуда ты знала? Я заставлю тебя рассказть, что ты скрываешь от меня!';
+            } else if (random == 0) {
                 text = 'Не думала, что ' + answered_by + ' способен на такое';
                 if (girl) text = 'Не думала, что ' + answered_by + ' способна на такое';
             } else if (random == 1) {
@@ -2054,6 +2139,7 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
             }
         }
     } else {
+        //ЗДЕСЬ РУБЕЖ ДОБАВЛЕНИЯ СПЕЦ. РЕЖИМА
         text = 'Отчаянная, но безуспешная попытка';
         let random = Math.floor(Math.random() * 5)
         if (player.id == 'ri') {
@@ -2277,11 +2363,20 @@ function next_round(data, forced_render) {
             }, delay);
         }
         data.phase.point = "endgame";
+        if (data.special_mode) {
+            data.special_mode = false; //выход из спец. режима
+        }
         update_data(data);
         return;
     }
 
     //перераздача карт
+    if (data.special_mode) {
+        let random_value = Math.floor(Math.random() * 10);
+        if (random_value >= 3) {
+            data.special_mode = false; //выход из спец. режима
+        }
+    }
     data.round = data.round + 1;
     let cards_players = data.cards_info.cards_players;
     let cards_weapons = data.cards_info.cards_weapons;
@@ -2296,19 +2391,20 @@ function next_round(data, forced_render) {
     data["history"] = [];
     main_encoding(data);
     //очистка и перерендер поля
-    check_time();
     document.querySelector('#top-container-area').innerHTML = null;
     document.querySelector('#left-container-area').innerHTML = null;
     document.querySelector('#right-container-area').innerHTML = null;
     document.querySelector('#bottom-container-area').innerHTML = null;
     let workarea = document.querySelector('#workarea');
+    check_time();
     let answer_cards = document.querySelectorAll('.answer-card');
     for (let i = 0; i < answer_cards.length; i++) {
         workarea.removeChild(answer_cards[i]);
     }
-    workarea_render();
+    update_data(data);
+    workarea_render(false);
     //перевод действия на следующий ход
-    next_action_prepare(data, repeat_action, true);
+    next_action_prepare(repeat_action, true);
 }
 
 
