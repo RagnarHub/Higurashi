@@ -239,7 +239,6 @@ function workarea_render(forced_render) {
         } else if (hour < 6) {
             let sr_chanse = 4;
         }
-        sr_chanse = 50; //для тестов, ПОТОМ УБРАТЬ
         if (random_value < sr_chanse) {
             data.special_mode = true; //запуск спец. режима
         }
@@ -505,6 +504,7 @@ function workarea_render(forced_render) {
 
             let score = document.createElement('div');
             score.className = "score score-" + player.subside + " " + player.border;
+            score.setAttribute('player', player_key);
             score.textContent = "Счет: " + player.score;
 
             if (player.subside == 'side') {
@@ -669,6 +669,11 @@ function restart_button_click() {
 
 function endgame() {
     alert('Партия закончена, игра будет перезапущена');
+    let data = get_data();
+    if (data.special_mode) {
+        data.special_mode = false; //выход из спец. режима
+    }
+    update_data(data);
     restart_game();
 }
 
@@ -1410,46 +1415,67 @@ function new_bot_action() {
     let k_unknown2_false1 = 1;
     let k_unknown2_false0 = 1;
     if (data.players_amount == 3) {
-        k_unknown3_false2 = 4; //5 -> 20 проц.
-        k_unknown3_false1 = 3.6; //20 -> 70 проц.
-        k_unknown2_false1 = 2.5; //20 -> 50 проц.
+        k_unknown3_false2 = 2; //10 -> 20 проц.
+        k_unknown3_false1 = 3.5; //20 -> 70 проц.
+        k_unknown2_false1 = 3; //30 -> 90 проц.
     } else if (data.players_amount == 2) {
-        k_unknown3_false2 = 18; //5 -> 90 проц.
-        k_unknown3_false1 = 3.96; //20 -> 9 проц.
-        k_unknown2_false1 = 4.6; //20 -> 92 проц.
+        k_unknown3_false2 = 9; //10 -> 90 проц.
+        k_unknown3_false1 = 0.45; //20 -> 9 проц.
+        k_unknown2_false1 = 3.13; //30 -> 94 проц.
         k_unknown2_false0 = 10; //0,5 -> 5 проц. (запутать)
     }
     //выбор логики
     if (true_cards == 0 && !target_regime) { //неизвестны три
-        //75 процентов на выбор 3 неизвестных; 20 процетнов на выбор 2 неизвестных; 5 процетнов на выбор 1 неизвестной
+        //70 процентов на выбор 3 неизвестных; 20 процетнов на выбор 2 неизвестных; 10 процетнов на выбор 1 неизвестной
         //0,5 процента выбрать все из своих, чтобы запутать нахрен
         let random_value = Math.floor(Math.random() * 1000);
         if (random_value < 5) { //во всех группах - "ложный выбор"
             false_check = ["player", "weapon", "location"];
-        } else if (random_value < (5 + 50 * k_unknown3_false2)) { //в двух из групп - "ложный выбор"
+        } else if (random_value < (5 + 10 * 10 * k_unknown3_false2)) { //в двух из групп - "ложный выбор"
+            //в 80 проц. случаях пробуем определить игрока
+            let random_inner = Math.floor(Math.random() * 10);
+            if (random_inner < 8) {
+                false_check = ["weapon", "location"];
+            } else {
+                let packs = ["player", "weapon", "location"];
+                let first_check = arrayRandElement(packs);
+                false_check.push(first_check);
+                packs = packs.filter(val => val !== first_check);
+                false_check.push(arrayRandElement(packs));
+            }
+        } else if (random_value < (5 + 10 * 10 * k_unknown3_false2 + 20 * 10 * k_unknown3_false1)) { //в одной из групп - "ложный выбор"
             let packs = ["player", "weapon", "location"];
-            let first_check = arrayRandElement(packs);
-            false_check.push(first_check);
-            packs = packs.filter(val => val !== first_check);
-            false_check.push(arrayRandElement(packs));
-        } else if (random_value < (5 + 250 * k_unknown3_false1)) { //в одной из групп - "ложный выбор"
-            let packs = ["player", "weapon", "location"];
+            //в 80 проц. случаях пробуем определить игрока
+            let random_inner = Math.floor(Math.random() * 10);
+            if (random_inner < 8) {
+                let packs = ["weapon", "location"];
+            }
             false_check.push(arrayRandElement(packs));
         }
     } else if (true_cards == 1 && !target_regime) { //неизвестны две
-        //80 процентов на выбор 2 неизвестных; 20 процетнов на выбор 1 неизвестной, а 1 заведомо неверной
+        //70 процентов на выбор 2 неизвестных; 30 процетнов на выбор 1 неизвестной, а 1 заведомо неверной
         //0,5 процента выбрать все из своих, чтобы запутать нахрен
         let random_value = Math.floor(Math.random() * 1000);
         if (random_value < (5 * k_unknown2_false0)) { //во всех группах - "ложный выбор"
             false_check = ["player", "weapon", "location"];
-        } else if (random_value < ((5 * k_unknown2_false0) + 200 * k_unknown2_false1)) { //в одной из групп - "ложный выбор"
+        } else if (random_value < (5 * k_unknown2_false0 + 30 * 10 * k_unknown2_false1)) { //в одной из групп - "ложный выбор"
             let packs = [];
             if (cards_player['true']) {
                 packs = ["weapon", "location"];
             } else if (cards_weapon['true']) {
                 packs = ["player", "location"];
+                //в 80 проц. случаях пробуем определить игрока
+                let random_inner = Math.floor(Math.random() * 10);
+                if (random_inner < 8) {
+                    packs = ["location"];
+                }
             } else if (cards_location['true']) {
                 packs = ["player", "weapon"];
+                //в 80 проц. случаях пробуем определить игрока
+                let random_inner = Math.floor(Math.random() * 10);
+                if (random_inner < 8) {
+                    packs = ["weapon"];
+                }
             }
             false_check.push(arrayRandElement(packs));
         }
@@ -1703,7 +1729,7 @@ function group_distribution(player, calc_list, cards_info, extra_correct, return
             }
             dev_list.sort(function (a, b) { return b.val - a.val; });
             let max_dev_card = dev_list[0]['name'];
-            if (neutral_to_true_check(player, dev_list[0]['val'], dev_list[1]['val'], calc_list[max_dev_card]["actions"], cards_group['unknown'].length)) {
+            if (neutral_to_true_check(player, dev_list[0]['val'], dev_list[1]['val'], calc_list[max_dev_card]["actions"], cards_group['unknown'].length, max_dev_card)) {
                 cards_group['true'] = max_dev_card;
                 cards_group['unknown'].splice(cards_group['unknown'].indexOf(max_dev_card), 1);
                 calc_list[max_dev_card]["rate"] = 8000; //вероятностно верная
@@ -1801,24 +1827,28 @@ function neutral_distribution_target_check(array, calc_list) {
 }
 
 //проверка на выведение карты из нейтрального распределения в предположительно верную
-function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actions, neutral_amount) {
+function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actions, neutral_amount, max_dev_card) {
+    let data = get_data();
     //задать параметры для игроков
     let params = {
-        'ri': { 'border': 30, 'chance': 10 }, //Рика - осторожная, при превышении бьет наверняка
-        'ha': { 'border': 30, 'chance': 5 }, //Ханю - осторожная
-        'mi': { 'border': 20, 'chance': 5 }, //Мион - средняя, средний шанс
-        're': { 'border': 40, 'chance': 3 }, //Рэна - максимальная осторожность
-        'si': { 'border': 20, 'chance': 8 }, //Шион - средняя, бьет решительно
-        'sa': { 'border': 15, 'chance': 8 }, //Сатоко - максимально агрессивная
+        'ri': { 'border': 50, 'chance': 10 }, //Рика - осторожная, при превышении бьет наверняка
+        'ha': { 'border': 50, 'chance': 5 }, //Ханю - осторожная
+        'mi': { 'border': 40, 'chance': 5 }, //Мион - средняя, средний шанс
+        're': { 'border': 60, 'chance': 3 }, //Рэна - максимальная осторожность
+        'si': { 'border': 40, 'chance': 8 }, //Шион - средняя, бьет решительно
+        'sa': { 'border': 33, 'chance': 8 }, //Сатоко - максимально агрессивная
     };
     let player_border = params[player_id]['border'];
+    if (in_array(max_dev_card, data.cards_info.cards_players)) {
+        player_border = player_border * 2; //карты игроков проходяет с меньшим шансом
+    }
     let player_chance = params[player_id]['chance'];
     //нулевая проверка - по заполненности данных (исключение ошибок)
     if (!player_border || !player_chance) {
         return false;
     }
-    //первая проверка - по верхней хотя бы 2 проверки
-    if (neutral_amount <= 1) {
+    //первая проверка - по верхней хотя бы 3 проверки
+    if (neutral_amount <= 2) {
         return false;
     }
     //вторая проверка - отклонение верхней превышает порог с поправкой на оставшееся число в распределении
@@ -1829,7 +1859,7 @@ function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actio
     }
     //третья проверка - увеличивается шанс прохода в зависимости от отклонения между 1 и 2
     let dev_amount = first_dev_rate - second_dev_rate;
-    let k = dev_amount / 20; //если больше 20 - шанс возрастает прогрессией 3-ей степени
+    let k = dev_amount / 30; //если больше 30 - шанс возрастает прогрессией 3-ей степени
     let real_chance = Math.floor(player_chance * Math.pow(k, 3));
     let random_value = Math.floor(Math.random() * 100);
     if (random_value < real_chance) {
@@ -2139,11 +2169,12 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
             }
         }
     } else {
-        //ЗДЕСЬ РУБЕЖ ДОБАВЛЕНИЯ СПЕЦ. РЕЖИМА
         text = 'Отчаянная, но безуспешная попытка';
         let random = Math.floor(Math.random() * 5)
         if (player.id == 'ri') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Твои усердия достойны похвалы, но неужели ты думаешь, что их достаточно?';
+            } else if (random == 0) {
                 text = 'Вперед и в бой же!';
             } else if (random == 1) {
                 text = 'Бедненький, бедненький, совсем не умеет играть же...';
@@ -2158,7 +2189,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'Нипаааа~☆ Не стоило переживать';
             }
         } else if (player.id == 'ha') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Бросать вызов своей судьбе. Так глупо для тебя.';
+            } else if (random == 0) {
                 text = 'Ау-ау! Не стоило из-за тебя волноваться';
             } else if (random == 1) {
                 text = 'Не переживай, в следующий раз все получится!';
@@ -2173,7 +2206,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 if (girl) text = 'Ау... Зачем ты так спешила?';
             }
         } else if (player.id == 're') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Что случилось? В твоей крови уже копошатся личинки, личинки?';
+            } else if (random == 0) {
                 text = 'Хаууу... Ты был близко...';
                 if (girl) text = 'Хауу... Ты была близко...';
             } else if (random == 1) {
@@ -2189,7 +2224,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 if (girl) text = 'Ты совсем не думая сказала, сказала?';
             }
         } else if (player.id == 'sa') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'В своем желании уничтожить меня вы зашли так далеко, что сами готовы все потерять?';
+            } else if (random == 0) {
                 text = 'О-хо-хо! Вы решили облегчить мне победу?';
             } else if (random == 1) {
                 text = 'Уф, не стоило из-за вас даже переживать';
@@ -2202,7 +2239,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 text = 'А вы, похоже, совсем не боитесь рисковать?';
             }
         } else if (player.id == 'mi') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Ты собственноручно приближаешь развязку. Тем удобнее будет нам.';
+            } else if (random == 0) {
                 text = 'Эхехе, кто-то собственноручно движется к наказанию!';
             } else if (random == 1) {
                 text = 'Вот это смелость, достойная члена нашего клуба!';
@@ -2216,7 +2255,9 @@ function answer_react(data, order_now, answer_result, delay, unblock, answered_b
                 if (girl) text = 'А я знала правильный ответ! Она не дала ответить мне! Нечестно!';
             }
         } else if (player.id == 'si') {
-            if (random == 0) {
+            if (data.special_mode) {
+                text = 'Ты ведешь себя странно. Зачем тебе это? Что ты скрываешь?';
+            } else if (random == 0) {
                 text = 'А это было дерзко!';
             } else if (random == 1) {
                 text = 'Да ты рисковый! Вот только этого мало';
@@ -2259,33 +2300,66 @@ function next_round(data, forced_render) {
     //проверка на окончание игры
     if (data.players_data[data.phase.active_player].score >= data.maxscore) {
         let winner = data.phase.active_player;
+        let score_block = document.querySelector('.score[player="' + winner + '"]');
+        score_block.textContent = "Счет: " + data.players_data[winner].score;
         let punishment = '';
         if (data.players_data[winner].type == 'user') {
             punishment = data.players_data[winner].punishment;
         } else {
             let punishment_code = data.players_data[winner].punishment;
-            punishment = get_punishment(winner, punishment_code);
-            let portrait = document.querySelector('.player-image[player="' + winner + '"]');
-            portrait.src = "images/sprites/" + winner + "/type1_happy.png";
+            punishment = get_punishment(winner, punishment_code, data.special_mode);
+            if (!data.special_mode) {
+                let portrait = document.querySelector('.player-image[player="' + winner + '"]');
+                portrait.src = "images/sprites/" + winner + "/type1_happy.png";
+            }
         }
         let win_text = '';
         if (winner == 'ri') {
-            win_text = 'Нипаааа~☆ Я победила же!';
+            if (data.special_mode) {
+                win_text = 'Что ж, после стольких циклов я все же смогла победить.';
+            } else {
+                win_text = 'Нипаааа~☆ Я победила же!';
+            }
         } else if (winner == 'ha') {
-            win_text = 'Ау-ау! Я наконец смогла вас всех обыграть!';
+            if (data.special_mode) {
+                win_text = 'Наивные людишки, и вы хотели победить меня? На что вы надеялись?';
+            } else {
+                win_text = 'Ау-ау! Я наконец смогла вас всех обыграть!';
+            }
         } else if (winner == 're') {
-            win_text = 'Хаууу! Рэна так увлеклась, что и не заметила, как выйграла!';
+            if (data.special_mode) {
+                win_text = 'А-ХА-ХА-ХА! Что случилось? Не вышло совладать с РэноЙ?';
+            } else {
+                win_text = 'Хаууу! Рэна так увлеклась, что и не заметила, как выйграла!';
+            }
         } else if (winner == 'sa') {
-            win_text = 'О-хо-хо! Вы даже не представляли, с кем связались!';
+            if (data.special_mode) {
+                win_text = 'Вы все хотели мне плохого! Но только не в этот раз!';
+            } else {
+                win_text = 'О-хо-хо! Вы даже не представляли, с кем связались!';
+            }
         } else if (winner == 'mi') {
-            win_text = 'Моя взяла! Эх, и не завидую я этому несчастному...';
+            if (data.special_mode) {
+                win_text = 'Готово. Это оказалось даже легче, чем я думала.';
+            } else {
+                win_text = 'Моя взяла! Эх, и не завидую я этому несчастному...';
+            }
         } else if (winner == 'si') {
-            win_text = 'Вы серьезно надеялись обыграть меня? Наивно...';
+            if (data.special_mode) {
+                win_text = 'Вам не удалось меня запутать! Теперь я разберусь с вами!';
+            } else {
+                win_text = 'Вы серьезно надеялись обыграть меня? Наивно...';
+            }
         } else {
             win_text = 'Ну вот и все, победа за мной!';
         }
-        win_text_block = win_text + ' Наказание для проигравшего - <span class="color_weapon">' + punishment + '!</span>';
-        win_text = win_text + ' Наказание для проигравшего - ' + punishment + '!';
+        if (data.special_mode) {
+            win_text_block = win_text + ' Прими же свое полное ужаса наказание - <span class="color_weapon">' + punishment + '!</span>';
+            win_text = win_text + ' Прими же свое полное ужаса наказание - ' + punishment + '!';
+        } else {
+            win_text_block = win_text + ' Наказание для проигравшего - <span class="color_weapon">' + punishment + '!</span>';
+            win_text = win_text + ' Наказание для проигравшего - ' + punishment + '!';
+        }
         let min_score = false;
         let min_score_players = [];
         for (let player_key in data.players_data) {
@@ -2301,11 +2375,21 @@ function next_round(data, forced_render) {
             }
         }
         if (min_score_players.length == 1) {
-            win_text = win_text + ' И выполнять его будет ' + data.players_data[min_score_players[0]].name;
-            win_text_block = win_text_block + ' И выполнять его будет <span class="' + min_score_players[0] + '-text">' + data.players_data[min_score_players[0]].name + '<span>';
+            if (data.special_mode) {
+                win_text = win_text + ' И страдать сегодня будет ' + data.players_data[min_score_players[0]].name;
+                win_text_block = win_text_block + ' И страдать сегодня будет <span class="' + min_score_players[0] + '-text">' + data.players_data[min_score_players[0]].name + '<span>';
+            } else {
+                win_text = win_text + ' И выполнять его будет ' + data.players_data[min_score_players[0]].name;
+                win_text_block = win_text_block + ' И выполнять его будет <span class="' + min_score_players[0] + '-text">' + data.players_data[min_score_players[0]].name + '<span>';
+            }
         } else {
-            win_text = win_text + ' И выполнять его будут:';
-            win_text_block = win_text_block + ' И выполнять его будут:';
+            if (data.special_mode) {
+                win_text = win_text + ' И страдать сегодня будут:';
+                win_text_block = win_text_block + ' И страдать сегодня будут:';
+            } else {
+                win_text = win_text + ' И выполнять его будут:';
+                win_text_block = win_text_block + ' И выполнять его будут:';
+            }
             for (let loose_player_key in min_score_players) {
                 let loose_player = min_score_players[loose_player_key];
                 if (loose_player_key != 0) {
@@ -2331,23 +2415,51 @@ function next_round(data, forced_render) {
             delay = delay + 300;
             let loose_text = '';
             if (loose_player == 'ri') {
-                loose_text = 'Мииии... ' + data.players_data[winner].name + ' слишком жесток ко мне же...';
-                if (girl) loose_text = 'Мииии... ' + data.players_data[winner].name + ' слишком жестока ко мне же...';
+                if (data.special_mode) {
+                    loose_text = 'В очередной раз я проиграла судьбе... Неужели это никогда не закончится?';
+                } else {
+                    loose_text = 'Мииии... ' + data.players_data[winner].name + ' слишком жесток ко мне же...';
+                    if (girl) loose_text = 'Мииии... ' + data.players_data[winner].name + ' слишком жестока ко мне же...';
+                }
             } else if (loose_player == 'ha') {
-                loose_text = 'Ау-ау-ау! ' + data.players_data[winner].name + ' решил совсем меня не жалеть...';
-                if (girl) loose_text = 'Ау-ау-ау! ' + data.players_data[winner].name + ' решила совсем меня не жалеть...';
+                if (data.special_mode) {
+                    loose_text = 'Значит, вот какой конец вы для меня приготовили...';
+                } else {
+                    loose_text = 'Ау-ау-ау! ' + data.players_data[winner].name + ' решил совсем меня не жалеть...';
+                    if (girl) loose_text = 'Ау-ау-ау! ' + data.players_data[winner].name + ' решила совсем меня не жалеть...';
+                }
             } else if (loose_player == 're') {
-                loose_text = 'Хаууу... Теперь Рэне придется эту жуть выполнять, выполнять?';
+                if (data.special_mode) {
+                    loose_text = 'Я не позволю! Не позволю тебе! И ты тоже уничтожаешь жизнь Рэны!';
+                } else {
+                    loose_text = 'Хаууу... Теперь Рэне придется эту жуть выполнять, выполнять?';
+                }
             } else if (loose_player == 'sa') {
-                loose_text = 'Уаааааааа! ' + data.players_data[winner].name + ' просто издевается надо мноооой!';
+                if (data.special_mode) {
+                    loose_text = 'Так вот какой был ваш план с самого начала! Не подходи ко мне! Неееет!';
+                } else {
+                    loose_text = 'Уаааааааа! ' + data.players_data[winner].name + ' просто издевается надо мноооой!';
+                }
             } else if (loose_player == 'mi') {
-                loose_text = 'Лидер клуба вынуждена выполнять наказание... Как я могла до такого дойти...';
+                if (data.special_mode) {
+                    loose_text = 'Ты же это не серьезно? Ты же не заставишь меня делать это? Эй! Отвечай!';
+                } else {
+                    loose_text = 'Лидер клуба вынуждена выполнять наказание... Как я могла до такого дойти...';
+                }
             } else if (loose_player == 'si') {
-                loose_text = 'Ну ничего, в следующий раз я напишу там такое, что ты еще пожалеешь!';
+                if (data.special_mode) {
+                    loose_text = 'Да как ты смеешь? Я буду мстить за это! Я из под земли тебя достану!';
+                } else {
+                    loose_text = 'Ну ничего, в следующий раз я напишу там такое, что ты еще пожалеешь!';
+                }
             } else {
-                loose_text = 'Придется это выполнять, кажется...';
+                if (data.special_mode) {
+                    loose_text = 'Эй, ты это серьезно вообще?';
+                } else {
+                    loose_text = 'Придется это выполнять, кажется...';
+                }
             }
-            if (data.players_data[loose_player].type != 'user') {
+            if (data.players_data[loose_player].type != 'user' && !data.special_mode) {
                 let portrait = document.querySelector('.player-image[player="' + loose_player + '"]');
                 portrait.src = "images/sprites/" + loose_player + "/type1_sad.png";
             }
@@ -2363,9 +2475,6 @@ function next_round(data, forced_render) {
             }, delay);
         }
         data.phase.point = "endgame";
-        if (data.special_mode) {
-            data.special_mode = false; //выход из спец. режима
-        }
         update_data(data);
         return;
     }
@@ -2656,10 +2765,12 @@ function get_cards_info(user_name) {
     return cards_base_info;
 }
 
-function get_punishment(winner, punishment_code) {
+function get_punishment(winner, punishment_code, special_mode) {
     let punishment = 'Ничего не делать';
     if (winner == 'ri') {
-        if (punishment_code == 0) {
+        if (special_mode) {
+            punishment = 'Испытать на себе пыточные орудия из храмового хранилища';
+        } else if (punishment_code == 0) {
             punishment = 'Погладить директора по лысине';
         } else if (punishment_code == 1) {
             punishment = 'Целый день мяукать вместо обычной речи';
@@ -2671,7 +2782,9 @@ function get_punishment(winner, punishment_code) {
             punishment = 'Выпить вечером вместе со мной';
         }
     } else if (winner == 'ha') {
-        if (punishment_code == 0) {
+        if (special_mode) {
+            punishment = 'Отправить кусочек себя плыть по реке в ночь Ватанагаши';
+        } else if (punishment_code == 0) {
             punishment = 'Незаметно следовать за соседом справа до конца дня';
         } else if (punishment_code == 1) {
             punishment = 'Попросить прощения у каждого в этой комнате, когда он не ждет';
@@ -2683,7 +2796,9 @@ function get_punishment(winner, punishment_code) {
             punishment = 'Забрать у Рики из холодильника всю горчицу';
         }
     } else if (winner == 're') {
-        if (punishment_code == 0) {
+        if (special_mode) {
+            punishment = 'Расковырять себе вену и достать оттуда всех-всех личинок';
+        } else if (punishment_code == 0) {
             punishment = 'Провести ночь одному на свалке вдали от людей';
         } else if (punishment_code == 1) {
             punishment = 'Пройти ночью через лес до ближайшего города одному';
@@ -2695,7 +2810,9 @@ function get_punishment(winner, punishment_code) {
             punishment = 'Пойти с Рэной слушать пение цикад вечером';
         }
     } else if (winner == 'sa') {
-        if (punishment_code == 0) {
+        if (special_mode) {
+            punishment = 'Провести два дня в моей ловушке на дереве, вися вниз головой';
+        } else if (punishment_code == 0) {
             punishment = 'Переночевать в собачьей конуре';
         } else if (punishment_code == 1) {
             punishment = 'Съесть целую тарелку печеной тыквы';
@@ -2707,7 +2824,9 @@ function get_punishment(winner, punishment_code) {
             punishment = 'Забрать меня к себе домой до завтра';
         }
     } else if (winner == 'mi') {
-        if (punishment_code == 0) {
+        if (special_mode) {
+            punishment = 'Съесть охаги со швейной иглой внутри';
+        } else if (punishment_code == 0) {
             punishment = 'Купить в аптеке мазь от геморроя';
         } else if (punishment_code == 1) {
             punishment = 'Прицепить к носу прищепкой усы и ходить так до вечера';
@@ -2719,7 +2838,9 @@ function get_punishment(winner, punishment_code) {
             punishment = 'Съесть обед со связанными за спиной руками';
         }
     } else if (winner == 'si') {
-        if (punishment_code == 0) {
+        if (special_mode) {
+            punishment = 'Отодрать себе ноготь с помощью нашего инструмента';
+        } else if (punishment_code == 0) {
             punishment = 'Выйти за меня в смену на работе';
         } else if (punishment_code == 1) {
             punishment = 'Приготовить мне что-нибудь на обед';
