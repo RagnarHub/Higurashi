@@ -1483,8 +1483,8 @@ function new_bot_action() {
     //из групп, где есть ответы (или если попали в процент ложного выбора) - берем заведомо неверную
     let random_value_fc_from_true = Math.floor(Math.random() * 100);
     let fc_from_true = false;
-    if (random_value_fc_from_true < 70 || data.players_amount == 2) {
-        fc_from_true = true; //если для ложного выбора нет заведомо неверных - взять заведомо верную с шансом 70 проц.
+    if (random_value_fc_from_true < 95 || data.players_amount == 2) {
+        fc_from_true = true; //если для ложного выбора нет заведомо неверных - взять заведомо верную с шансом 95 проц.
     }
     if (cards_player['true'] || in_array("player", false_check)) {
         if (cards_player['false'].length != 0 && (data.players_amount != 2 || (data.players_amount == 2 && in_array(cards_player['false'][0], data.players_data[player].cards)))) {
@@ -1836,7 +1836,7 @@ function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actio
         'mi': { 'border': 40, 'chance': 5 }, //Мион - средняя, средний шанс
         're': { 'border': 60, 'chance': 3 }, //Рэна - максимальная осторожность
         'si': { 'border': 40, 'chance': 8 }, //Шион - средняя, бьет решительно
-        'sa': { 'border': 33, 'chance': 8 }, //Сатоко - максимально агрессивная
+        'sa': { 'border': 30, 'chance': 8 }, //Сатоко - максимально агрессивная
     };
     let player_border = params[player_id]['border'];
     if (in_array(max_dev_card, data.cards_info.cards_players)) {
@@ -1859,7 +1859,7 @@ function neutral_to_true_check(player_id, first_dev_rate, second_dev_rate, actio
     }
     //третья проверка - увеличивается шанс прохода в зависимости от отклонения между 1 и 2
     let dev_amount = first_dev_rate - second_dev_rate;
-    let k = dev_amount / 30; //если больше 30 - шанс возрастает прогрессией 3-ей степени
+    let k = dev_amount / 28; //если больше 28 - шанс возрастает прогрессией 3-ей степени
     let real_chance = Math.floor(player_chance * Math.pow(k, 3));
     let random_value = Math.floor(Math.random() * 100);
     if (random_value < real_chance) {
