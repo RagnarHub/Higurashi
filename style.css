@@ -1180,3 +1180,27 @@ img {
     line-height: 1;
 }
 
+.button-back {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 100px;
+    height: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #9a2bf2;
+    color: cyan;
+    border-radius: 5px;
+    user-select: none;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.button-back:hover {
+    background-color: #b158f9;
+    color: rgb(65, 255, 255)
+}
