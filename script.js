@@ -397,7 +397,7 @@ function workarea_render(forced_render) {
 
             let stats_own = document.createElement('div');
             stats_own.className = "stats-own";
-            stats_own.innerHTML = player.name + "<br>Счет: " + player.score;
+            stats_own.innerHTML = player.name + '<br><span class="score score-player" player="user1">Счет: ' + player.score + '</span>';
             stats_own.style['z-index'] = 20;
             stats_own_cont.append(stats_own);
 
