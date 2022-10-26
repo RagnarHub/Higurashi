@@ -622,7 +622,7 @@ img {
     height: 0;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 50px solid rgb(243, 231, 214);
+    border-bottom: 56px solid rgb(243, 231, 214);
     transform: skew(0deg);
     z-index: 19;
 }
@@ -635,7 +635,7 @@ img {
     height: 0;
     border-left: -20px solid transparent;
     border-right: 20px solid transparent;
-    border-top: 50px solid rgb(243, 231, 214);
+    border-top: 56px solid rgb(243, 231, 214);
     transform: skew(-35deg);
     z-index: 19;
 }
@@ -648,7 +648,7 @@ img {
     height: 0;
     border-left: 20px solid transparent;
     border-right: -20px solid transparent;
-    border-top: 50px solid rgb(243, 231, 214);
+    border-top: 56px solid rgb(243, 231, 214);
     transform: skew(35deg);
     z-index: 19;
 }
@@ -1139,6 +1139,17 @@ img {
     color: blue;
     border: 2px solid blue;
     resize: none;
+}
+
+@media (min-width: 1400px) {
+    #person-selector-desc, #weapon-selector-desc, #location-selector-desc {
+        font-size: 22px;
+    }
+}
+@media (min-width: 1200px) and (max-width: 1400px) {
+    #person-selector-desc, #weapon-selector-desc, #location-selector-desc {
+        font-size: 20px;
+    }
 }
 
 @media (max-width: 700px) {
