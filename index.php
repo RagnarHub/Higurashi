@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Higurashi game</title>
+    <title>Higurashi no Naku Koro ni | Когда плачут цикады - Карточная игра</title>
+    <meta name="description"
+    content="Карточная игра из визуальной новеллы Higurashi no Naku Koro ni - Когда плачут цикады.">
     <link rel="stylesheet" href="style.css">
     <link type="image/x-icon" href="favicon.ico" rel="shortcut icon">
     <link type="Image/x-icon" href="favicon.ico" rel="icon">
@@ -16,6 +18,9 @@
         <a href="/" class="button-back">
             <div class="button-back__text">На главную</div>
         </a>
+        <div style="display: none;">
+        <h1>Карточная игра по Когда плачут цикады</h1>
+        </div>
         <div id="workarea">
             <div id="layer"></div>
             <div id="top-container">
@@ -38,7 +43,6 @@
 </html>
 
 <?php
-    $file="base.log";    //куда пишем логи
     $col_zap=4999;        //строк в файле не более
 
     function getRealIpAddr() {
