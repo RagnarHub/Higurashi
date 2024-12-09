@@ -43,6 +43,7 @@
 </html>
 
 <?php
+    $file="log/logfile.log";    //куда пишем логи
     $col_zap=4999;        //строк в файле не более
 
     function getRealIpAddr() {
@@ -63,6 +64,8 @@
     $home = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];    //какая страница сайта
     $lines = file($file);
     while(count($lines) > $col_zap) array_shift($lines);
+    $ip_explode = explode('.', $ip);
+    $ip = implode('.', array($ip_explode[0], $ip_explode[1], $ip_explode[2]));
     $lines[] = $date."|".$bot."|".$ip."|".$home."|\r\n";
     file_put_contents($file, $lines);
 ?>
