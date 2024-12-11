@@ -13,6 +13,7 @@
     <link type="Image/x-icon" href="favicon.ico" rel="icon">
 </head>
 
+<!--Здесь только каркас страницы, все данные формируются динамически через JS-->
 <body>
     <div id="main-page">
         <a href="/" class="button-back">
