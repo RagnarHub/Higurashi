@@ -46,7 +46,7 @@
 <?php
     //сбор статистики для себя
     $file="log/logfile.log";    //куда пишем логи
-    $col_zap=4999;        //строк в файле не более
+    $col_zap=5000;        //строк в файле не более
 
     function getRealIpAddr() {
     if (!empty($_SERVER['HTTP_CLIENT_IP']))        // Определяем IP
